@@ -3017,7 +3017,7 @@ const SAMPLE = {
 /* ===== 클라우드 동기화 · Đồng bộ dữ liệu chung qua Google Sheets (không cần máy chủ) =====
    Dữ liệu chung được lưu bằng Cloudflare Pages Function (functions/api/db.js) + Cloudflare D1.
    Mỗi ngày báo cáo = 1 dòng trong Sheet. Ai mở link cũng thấy & sửa cùng một dữ liệu. */
-var SYNC_URL = (/^https?:/.test(location.protocol) ? '/api/db' : '');   // Cloudflare: Pages Function functions/api/db.js + D1; mở file trên máy: tắt
+var SYNC_URL = 'https://kehoachsanxuat-nhanluc.pages.dev/api/db';  // Cloudflare: Pages Function functions/api/db.js + D1; mở file trên máy: tắt
 var SYNC_POLL_MS = 10000;     // kiểm tra thay đổi của người khác mỗi 10 giây
 
 (function () {
