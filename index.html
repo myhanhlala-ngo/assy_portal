@@ -1,148 +1,199 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14294b">
 <title>ASSY DIGITAL PORTAL</title>
 <style>
+:root{--nav:#14294b;--nav2:#1d3d68;--blue:#2864bd;--bg:#f2f5fa;--line:#dce4ef;--text:#172b45;--muted:#718096}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#edf2f8;color:#172b45}
-header{background:linear-gradient(120deg,#102342,#174f83);color:white;padding:28px 5% 24px}
-.top{max-width:1250px;margin:auto}
-.brand{display:flex;align-items:center;gap:14px}
-.logo{width:52px;height:52px;border-radius:13px;background:#fff2;display:grid;place-items:center;font-size:28px}
-h1{font-size:27px;margin:0 0 6px}
-.subtitle{color:#c9d9ef;font-size:13px}
-.info{margin-top:20px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#d9e6f5}
-main{max-width:1250px;margin:30px auto;padding:0 22px}
-.heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
-.heading h2{margin:0;font-size:21px}
-.heading p{margin:5px 0;color:#64748b;font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px}
-.card{background:white;border:1px solid #dce4ef;border-radius:13px;padding:22px;text-decoration:none;color:inherit;box-shadow:0 3px 10px #142c4e0b;transition:.2s;min-height:155px;display:flex;flex-direction:column}
-.card:hover{transform:translateY(-4px);box-shadow:0 9px 22px #142c4e18;border-color:#7ca8d9}
-.ico{width:43px;height:43px;border-radius:11px;display:grid;place-items:center;font-size:23px;margin-bottom:15px;background:#e9f2ff}
-.card h3{font-size:16px;margin:0 0 7px}
-.card p{font-size:12px;color:#718096;margin:0;line-height:1.5}
-.open{margin-top:auto;padding-top:13px;color:#1765a8;font-size:12px;font-weight:bold}
-.footer{margin-top:30px;background:white;border:1px solid #dce4ef;border-radius:12px;padding:17px;text-align:center;color:#64748b;font-size:12px}
-.lang{background:#ffffff20;border:1px solid #ffffff55;color:white;padding:8px 13px;border-radius:7px;cursor:pointer}
-@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:480px){.grid{grid-template-columns:1fr}h1{font-size:21px}main{padding:0 14px}.card{min-height:130px}}
+html,body{height:100%;margin:0}
+body{font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.topbar{height:66px;flex:0 0 66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:14px;z-index:3}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#18345c,#2864bd);display:grid;place-items:center;color:#fff;font-size:22px}
+.brand-title{font-weight:800;font-size:17px;letter-spacing:.5px;white-space:nowrap}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.top-actions{display:flex;align-items:center;gap:9px}
+.lang-btn,.top-btn{border:1px solid var(--line);background:#fff;color:#29415f;border-radius:8px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:700}
+.top-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.workspace{display:flex;min-height:0;flex:1}
+.sidebar{width:252px;flex:0 0 252px;background:var(--nav);color:#fff;display:flex;flex-direction:column;overflow:auto}
+.side-head{padding:20px 17px 15px;border-bottom:1px solid #ffffff1c}
+.side-head strong{font-size:15px;letter-spacing:.7px}
+.side-head small{display:block;color:#b9cce6;font-size:11px;margin-top:5px;line-height:1.5}
+.nav-label{padding:17px 17px 7px;color:#91add0;font-size:10px;font-weight:800;letter-spacing:1px}
+.nav-item{width:calc(100% - 18px);margin:2px 9px;border:0;background:transparent;color:#dce8f7;text-align:left;border-radius:8px;padding:11px 10px;display:flex;align-items:center;gap:11px;cursor:pointer;font-size:12px;font-weight:600}
+.nav-item:hover{background:#ffffff14}
+.nav-item.active{background:#2d65bd;color:#fff;box-shadow:0 4px 12px #071b3680}
+.nav-icon{width:21px;text-align:center;font-size:16px;flex:0 0 21px}
+.side-foot{margin-top:auto;padding:13px 16px;border-top:1px solid #ffffff1c;color:#9fb5d2;font-size:10px;line-height:1.6}
+.content{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.content-head{min-height:66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:12px 22px;gap:14px}
+.page-title{font-size:18px;font-weight:800}
+.page-desc{font-size:11px;color:var(--muted);margin-top:5px}
+.frame-actions{display:flex;gap:8px;align-items:center}
+.frame-actions button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:8px 10px;color:#34506f;font-size:11px;cursor:pointer}
+.view-area{position:relative;flex:1;min-height:0;overflow:auto}
+#appFrame{display:none;width:100%;height:100%;border:0;background:#fff}
+#appFrame.visible{display:block}
+.overview{padding:22px;max-width:1500px;margin:0 auto}
+.welcome{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.welcome h2{font-size:21px;margin:0 0 7px}
+.welcome p{margin:0;color:var(--muted);font-size:12px}
+.overview-note{background:#e7f0ff;color:#315782;border:1px solid #d3e3fa;border-radius:9px;padding:10px 13px;font-size:11px;line-height:1.5;max-width:390px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.app-card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:17px;text-align:left;cursor:pointer;min-height:132px;display:flex;flex-direction:column;box-shadow:0 2px 7px #18345c08;transition:.15s;color:var(--text)}
+.app-card:hover{transform:translateY(-2px);border-color:#8eb1df;box-shadow:0 7px 18px #18345c12}
+.card-icon{width:36px;height:36px;border-radius:9px;background:#eaf2ff;display:grid;place-items:center;font-size:19px;margin-bottom:12px}
+.app-card strong{font-size:13px;margin-bottom:6px}
+.app-card span.desc{font-size:11px;color:var(--muted);line-height:1.45}
+.app-card .launch{margin-top:auto;padding-top:12px;color:var(--blue);font-size:10px;font-weight:800}
+.loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#f2f5fa;color:#526984;font-size:13px;z-index:1}
+.loading.show{display:flex}
+.mobile-menu{display:none}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){
+ body{overflow:auto}.app-shell{min-height:100vh;height:100vh}
+ .topbar{height:58px;flex-basis:58px;padding:0 12px}
+ .brand-mark{width:34px;height:34px}.brand-title{font-size:13px}.brand-sub{display:none}
+ .mobile-menu{display:inline-flex}.sidebar{position:absolute;top:58px;bottom:0;left:0;width:260px;z-index:5;transform:translateX(-102%);transition:transform .2s;box-shadow:8px 0 24px #071b3630}
+ .sidebar.open{transform:translateX(0)}
+ .content-head{padding:10px 13px;min-height:58px}.page-title{font-size:15px}
+ .overview{padding:14px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .overview-note{max-width:none}.top-actions{gap:5px}.lang-btn,.top-btn{padding:8px;font-size:10px}
+}
+@media(max-width:430px){.cards{grid-template-columns:1fr 1fr;gap:9px}.app-card{padding:12px;min-height:140px}.brand-title{font-size:11px}.top-btn{display:none}}
 </style>
 </head>
 <body>
-
-<header>
-<div class="top">
-  <div class="brand">
-    <div class="logo">🏭</div>
-    <div>
-      <h1>ASSY DIGITAL PORTAL</h1>
-      <div class="subtitle">HỆ THỐNG QUẢN LÝ BỘ PHẬN LẮP RÁP · 조립팀 통합 관리 시스템</div>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <button class="top-btn mobile-menu" id="menuToggle" aria-label="Mở menu">☰</button>
+      <div class="brand-mark">🏭</div>
+      <div>
+        <div class="brand-title">ASSY DIGITAL PORTAL</div>
+        <div class="brand-sub" data-vi="Hệ thống quản lý bộ phận Lắp ráp" data-kr="조립팀 통합 관리 시스템">Hệ thống quản lý bộ phận Lắp ráp</div>
+      </div>
     </div>
+    <div class="top-actions">
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">🇻🇳 VI / 🇰🇷 KR</button>
+      <button class="top-btn" onclick="goHome()" data-vi="⌂ Tổng quan" data-kr="⌂ 종합 현황">⌂ Tổng quan</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <strong>ASSY · DIGITAL WORKSPACE</strong>
+        <small data-vi="Trung tâm ứng dụng và báo cáo bộ phận Lắp ráp" data-kr="조립팀 애플리케이션 및 보고 통합 포털">Trung tâm ứng dụng và báo cáo bộ phận Lắp ráp</small>
+      </div>
+      <div class="nav-label" data-vi="ĐIỀU HƯỚNG" data-kr="메뉴">ĐIỀU HƯỚNG</div>
+      <button class="nav-item active" data-app="home" onclick="goHome()"><span class="nav-icon">▦</span><span data-vi="Tổng quan" data-kr="종합 현황">Tổng quan</span></button>
+      <div class="nav-label" data-vi="ỨNG DỤNG ASSY" data-kr="조립팀 시스템">ỨNG DỤNG ASSY</div>
+      <nav id="appNav">
+        <button class="nav-item" data-app="daily-manpower" onclick="openApp('daily-manpower')"><span class="nav-icon">👥</span><span data-vi="Báo cáo nhân lực" data-kr="일일 인원 현황표">Báo cáo nhân lực</span></button>
+        <button class="nav-item" data-app="daily-plan-defect" onclick="openApp('daily-plan-defect')"><span class="nav-icon">📅</span><span data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</span></button>
+        <button class="nav-item" data-app="loss-cost" onclick="openApp('loss-cost')"><span class="nav-icon">💰</span><span data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</span></button>
+        <button class="nav-item" data-app="material-ng-loss" onclick="openApp('material-ng-loss')"><span class="nav-icon">📦</span><span data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</span></button>
+        <button class="nav-item" data-app="mqis" onclick="openApp('mqis')"><span class="nav-icon">📈</span><span>MQIS</span></button>
+        <button class="nav-item" data-app="production-ops-plan" onclick="openApp('production-ops-plan')"><span class="nav-icon">🏭</span><span data-vi="Kế hoạch vận hành" data-kr="생산 운영 계획">Kế hoạch vận hành</span></button>
+        <button class="nav-item" data-app="quality" onclick="openApp('quality')"><span class="nav-icon">🛡️</span><span data-vi="Quản lý chất lượng" data-kr="품질 관리">Quản lý chất lượng</span></button>
+        <button class="nav-item" data-app="revenue-manpower" onclick="openApp('revenue-manpower')"><span class="nav-icon">📊</span><span data-vi="Doanh thu / Nhân lực" data-kr="매출 / 인원">Doanh thu / Nhân lực</span></button>
+      </nav>
+      <div class="side-foot">ASSY DIGITAL PORTAL<br>Cloudflare Pages · Internal Workspace</div>
+    </aside>
+
+    <main class="content">
+      <div class="content-head">
+        <div>
+          <div class="page-title" id="pageTitle" data-vi="Tổng quan ASSY" data-kr="조립팀 종합 현황">Tổng quan ASSY</div>
+          <div class="page-desc" id="pageDesc" data-vi="Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình." data-kr="왼쪽 메뉴에서 시스템을 선택하여 한 화면에서 사용하세요.">Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình.</div>
+        </div>
+        <div class="frame-actions" id="frameActions" style="display:none">
+          <button onclick="reloadApp()" data-vi="↻ Tải lại" data-kr="↻ 새로고침">↻ Tải lại</button>
+          <button onclick="openExternal()" data-vi="↗ Mở tab riêng" data-kr="↗ 새 탭에서 열기">↗ Mở tab riêng</button>
+        </div>
+      </div>
+
+      <section class="view-area">
+        <div class="overview" id="overview">
+          <div class="welcome">
+            <div>
+              <h2 data-vi="TRUNG TÂM QUẢN LÝ BỘ PHẬN LẮP RÁP" data-kr="조립팀 통합 관리 센터">TRUNG TÂM QUẢN LÝ BỘ PHẬN LẮP RÁP</h2>
+              <p data-vi="Truy cập nhanh các hệ thống báo cáo, sản xuất, nhân lực và chất lượng." data-kr="보고, 생산, 인원 및 품질 시스템에 빠르게 접속하세요.">Truy cập nhanh các hệ thống báo cáo, sản xuất, nhân lực và chất lượng.</p>
+            </div>
+            <div class="overview-note" data-vi="Chọn một ứng dụng ở menu bên trái hoặc các thẻ bên dưới. Ứng dụng sẽ hiển thị ngay tại khu vực này, không mở thêm tab trình duyệt." data-kr="왼쪽 메뉴 또는 아래 카드를 선택하세요. 시스템은 새 브라우저 탭을 열지 않고 이 영역에 표시됩니다.">Chọn một ứng dụng ở menu bên trái hoặc các thẻ bên dưới. Ứng dụng sẽ hiển thị ngay tại khu vực này, không mở thêm tab trình duyệt.</div>
+          </div>
+          <div class="cards">
+            <button class="app-card" onclick="openApp('daily-manpower')"><span class="card-icon">👥</span><strong data-vi="Báo cáo nhân lực hằng ngày" data-kr="일일 인원 현황표">Báo cáo nhân lực hằng ngày</strong><span class="desc" data-vi="Theo dõi nhân lực, ca ngày và ca đêm." data-kr="일일 인원 및 주간·야간 근무 관리">Theo dõi nhân lực, ca ngày và ca đêm.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('daily-plan-defect')"><span class="card-icon">📅</span><strong data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</strong><span class="desc" data-vi="Theo dõi kế hoạch sản xuất và tình hình lỗi." data-kr="생산 계획 및 불량 현황 관리">Theo dõi kế hoạch sản xuất và tình hình lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('loss-cost')"><span class="card-icon">💰</span><strong data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</strong><span class="desc" data-vi="Theo dõi tổn thất, RMA và chi phí lỗi." data-kr="손실 및 RMA 비용 관리">Theo dõi tổn thất, RMA và chi phí lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('material-ng-loss')"><span class="card-icon">📦</span><strong data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</strong><span class="desc" data-vi="Quản lý vật tư NG, tái chế và tiêu hao." data-kr="불량 자재, 재활용 및 소모 관리">Quản lý vật tư NG, tái chế và tiêu hao.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('mqis')"><span class="card-icon">📈</span><strong>MQIS</strong><span class="desc" data-vi="Theo dõi và phân tích chỉ số chất lượng." data-kr="품질 지표 모니터링 및 분석">Theo dõi và phân tích chỉ số chất lượng.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('production-ops-plan')"><span class="card-icon">🏭</span><strong data-vi="Kế hoạch vận hành" data-kr="생산 운영 계획">Kế hoạch vận hành</strong><span class="desc" data-vi="Quản lý kế hoạch và hoạt động vận hành." data-kr="생산 운영 계획 및 관리">Quản lý kế hoạch và hoạt động vận hành.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('quality')"><span class="card-icon">🛡️</span><strong data-vi="Quản lý chất lượng" data-kr="품질 관리">Quản lý chất lượng</strong><span class="desc" data-vi="Theo dõi NG, DPMO, Sigma và Yield." data-kr="불량, DPMO, Sigma 및 수율 관리">Theo dõi NG, DPMO, Sigma và Yield.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openApp('revenue-manpower')"><span class="card-icon">📊</span><strong data-vi="Doanh thu / Nhân lực" data-kr="매출 / 인원">Doanh thu / Nhân lực</strong><span class="desc" data-vi="Phân tích doanh thu và hiệu suất nhân lực." data-kr="매출 및 인원 생산성 분석">Phân tích doanh thu và hiệu suất nhân lực.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+          </div>
+        </div>
+        <div class="loading" id="loading">Đang tải ứng dụng...</div>
+        <iframe id="appFrame" title="ASSY application" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+      </section>
+    </main>
   </div>
-  <div class="info">
-    <span>📊 Trung tâm ứng dụng và báo cáo ASSY</span>
-    <button class="lang" onclick="toggleLang()" id="langBtn">VI / KR</button>
-  </div>
 </div>
-</header>
-
-<main>
-<div class="heading">
-  <div>
-    <h2 id="heading">TRUNG TÂM ỨNG DỤNG</h2>
-    <p id="description">Chọn ứng dụng cần sử dụng để truy cập hệ thống.</p>
-  </div>
-</div>
-
-<div class="grid">
-
-<a class="card" href="/daily-manpower/">
-  <div class="ico">👥</div>
-  <h3 data-vi="Báo cáo nhân lực" data-kr="일일 인원 현황표">Báo cáo nhân lực</h3>
-  <p data-vi="Quản lý nhân lực hằng ngày, ca ngày và ca đêm." data-kr="일일 인원 및 주간·야간 근무 관리">Quản lý nhân lực hằng ngày, ca ngày và ca đêm.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/daily-plan-defect/">
-  <div class="ico">📅</div>
-  <h3 data-vi="Kế hoạch sản xuất" data-kr="생산 계획">Kế hoạch sản xuất</h3>
-  <p data-vi="Theo dõi kế hoạch và tình hình sản xuất." data-kr="생산 계획 및 실적 관리">Theo dõi kế hoạch và tình hình sản xuất.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/loss-cost/">
-  <div class="ico">💰</div>
-  <h3 data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</h3>
-  <p data-vi="Theo dõi tổn thất, RMA và chi phí lỗi." data-kr="손실 비용 및 RMA 관리">Theo dõi tổn thất, RMA và chi phí lỗi.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/material-ng-loss/">
-  <div class="ico">📦</div>
-  <h3 data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</h3>
-  <p data-vi="Quản lý vật tư NG, tái chế và tiêu hao." data-kr="불량 자재 및 재활용 관리">Quản lý vật tư NG, tái chế và tiêu hao.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/mqis/">
-  <div class="ico">📈</div>
-  <h3>MQIS</h3>
-  <p data-vi="Hệ thống theo dõi và phân tích chỉ số chất lượng." data-kr="품질 지표 모니터링 및 분석">Hệ thống theo dõi và phân tích chỉ số chất lượng.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/production-ops-plan/">
-  <div class="ico">🏭</div>
-  <h3 data-vi="Kế hoạch vận hành" data-kr="생산 운영 계획">Kế hoạch vận hành</h3>
-  <p data-vi="Quản lý kế hoạch và hoạt động vận hành." data-kr="생산 운영 계획 및 관리">Quản lý kế hoạch và hoạt động vận hành.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/quality/">
-  <div class="ico">🛡️</div>
-  <h3 data-vi="Quản lý chất lượng" data-kr="품질 관리">Quản lý chất lượng</h3>
-  <p data-vi="Theo dõi NG, DPMO, Sigma và Yield." data-kr="불량, DPMO, Sigma 및 수율 관리">Theo dõi NG, DPMO, Sigma và Yield.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-<a class="card" href="/revenue-manpower/">
-  <div class="ico">📊</div>
-  <h3 data-vi="Doanh thu nhân lực" data-kr="인당 매출 관리">Doanh thu nhân lực</h3>
-  <p data-vi="Phân tích doanh thu và hiệu suất nhân lực." data-kr="인당 매출 및 인력 효율 분석">Phân tích doanh thu và hiệu suất nhân lực.</p>
-  <div class="open">MỞ ỨNG DỤNG →</div>
-</a>
-
-</div>
-
-<div class="footer">
-  <strong>ASSY DIGITAL MANAGEMENT SYSTEM</strong><br>
-  Internal Applications Portal · Hanoi SJ Corporation
-  <br>© 2026 ASSY TEAM
-</div>
-</main>
-
 <script>
-let currentLang="vi";
-function toggleLang(){
- currentLang=currentLang==="vi"?"kr":"vi";
- document.documentElement.lang=currentLang;
- document.querySelectorAll("[data-vi]").forEach(el=>{
-   el.textContent=el.dataset[currentLang];
- });
- document.getElementById("heading").textContent=
-   currentLang==="vi"?"TRUNG TÂM ỨNG DỤNG":"통합 애플리케이션 센터";
- document.getElementById("description").textContent=
-   currentLang==="vi"?"Chọn ứng dụng cần sử dụng để truy cập hệ thống.":"사용할 애플리케이션을 선택하세요.";
- document.querySelectorAll(".open").forEach(el=>{
-   el.textContent=currentLang==="vi"?"MỞ ỨNG DỤNG →":"앱 열기 →";
- });
- document.getElementById("langBtn").textContent=
-   currentLang==="vi"?"VI / KR":"KR / VI";
+const apps={
+ 'daily-manpower':{vi:'Báo cáo nhân lực hằng ngày',kr:'일일 인원 현황표',url:'/daily-manpower/'},
+ 'daily-plan-defect':{vi:'Kế hoạch & lỗi',kr:'생산 계획 및 불량',url:'/daily-plan-defect/'},
+ 'loss-cost':{vi:'Chi phí lỗi',kr:'실패 비용',url:'/loss-cost/'},
+ 'material-ng-loss':{vi:'Tổn thất vật tư NG',kr:'불량 자재 손실',url:'/material-ng-loss/'},
+ 'mqis':{vi:'MQIS',kr:'MQIS',url:'/mqis/'},
+ 'production-ops-plan':{vi:'Kế hoạch vận hành',kr:'생산 운영 계획',url:'/production-ops-plan/'},
+ 'quality':{vi:'Quản lý chất lượng',kr:'품질 관리',url:'/quality/'},
+ 'revenue-manpower':{vi:'Doanh thu / Nhân lực',kr:'매출 / 인원',url:'/revenue-manpower/'}
+};
+let currentApp=null, lang='vi';
+const frame=document.getElementById('appFrame');
+function setLanguage(next){
+ lang=next;document.documentElement.lang=lang;
+ document.querySelectorAll('[data-vi][data-kr]').forEach(el=>{el.textContent=el.dataset[lang]});
+ document.getElementById('langBtn').textContent=lang==='vi'?'🇻🇳 VI / 🇰🇷 KR':'🇰🇷 KR / 🇻🇳 VI';
+ document.getElementById('loading').textContent=lang==='vi'?'Đang tải ứng dụng...':'시스템을 불러오는 중...';
+ if(currentApp){document.getElementById('pageTitle').textContent=apps[currentApp][lang]}
 }
+function toggleLang(){setLanguage(lang==='vi'?'kr':'vi')}
+function markActive(id){document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.app===id))}
+function goHome(){
+ currentApp=null;frame.classList.remove('visible');frame.removeAttribute('src');
+ document.getElementById('overview').style.display='block';
+ document.getElementById('frameActions').style.display='none';
+ document.getElementById('pageTitle').textContent=lang==='vi'?'Tổng quan ASSY':'조립팀 종합 현황';
+ document.getElementById('pageDesc').textContent=lang==='vi'?'Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình.':'왼쪽 메뉴에서 시스템을 선택하여 한 화면에서 사용하세요.';
+ markActive('home');history.replaceState(null,'',location.pathname);document.getElementById('sidebar').classList.remove('open');
+}
+function openApp(id){
+ if(!apps[id])return;
+ currentApp=id;markActive(id);
+ document.getElementById('overview').style.display='none';
+ document.getElementById('frameActions').style.display='flex';
+ document.getElementById('pageTitle').textContent=apps[id][lang];
+ document.getElementById('pageDesc').textContent=lang==='vi'?'Ứng dụng đang chạy trong cổng ASSY.':'ASSY 포털 내부에서 시스템이 실행 중입니다.';
+ document.getElementById('loading').classList.add('show');
+ frame.classList.add('visible');
+ if(frame.dataset.app!==id){frame.dataset.app=id;frame.src=apps[id].url}
+ history.replaceState(null,'',location.pathname+'#'+id);
+ document.getElementById('sidebar').classList.remove('open');
+}
+frame.addEventListener('load',()=>document.getElementById('loading').classList.remove('show'));
+function reloadApp(){if(currentApp){document.getElementById('loading').classList.add('show');frame.contentWindow.location.reload()}}
+function openExternal(){if(currentApp)window.open(apps[currentApp].url,'_blank','noopener')}
+document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(apps[id])openApp(id);else goHome()});
+const initial=location.hash.slice(1);if(apps[initial])openApp(initial);else goHome();
 </script>
 </body>
 </html>
