@@ -96,6 +96,7 @@ body{font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--te
       <div class="nav-label" data-vi="ỨNG DỤNG ASSY" data-kr="조립팀 시스템">ỨNG DỤNG ASSY</div>
       <nav id="appNav">
         <button class="nav-item" data-app="daily-manpower" onclick="openApp('daily-manpower')"><span class="nav-icon">👥</span><span data-vi="Báo cáo nhân lực" data-kr="일일 인원 현황표">Báo cáo nhân lực</span></button>
+        <button class="nav-item" data-app="daily-work-report" onclick="openWorkReport()"><span class="nav-icon">📝</span><span data-vi="Báo cáo công việc hằng ngày" data-kr="일일 업무 보고">Báo cáo công việc hằng ngày ↗</span></button>
         <button class="nav-item" data-app="daily-plan-defect" onclick="openApp('daily-plan-defect')"><span class="nav-icon">📅</span><span data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</span></button>
         <button class="nav-item" data-app="loss-cost" onclick="openApp('loss-cost')"><span class="nav-icon">💰</span><span data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</span></button>
         <button class="nav-item" data-app="material-ng-loss" onclick="openApp('material-ng-loss')"><span class="nav-icon">📦</span><span data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</span></button>
@@ -130,6 +131,7 @@ body{font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--te
           </div>
           <div class="cards">
             <button class="app-card" onclick="openApp('daily-manpower')"><span class="card-icon">👥</span><strong data-vi="Báo cáo nhân lực hằng ngày" data-kr="일일 인원 현황표">Báo cáo nhân lực hằng ngày</strong><span class="desc" data-vi="Theo dõi nhân lực, ca ngày và ca đêm." data-kr="일일 인원 및 주간·야간 근무 관리">Theo dõi nhân lực, ca ngày và ca đêm.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
+            <button class="app-card" onclick="openWorkReport()"><span class="card-icon">📝</span><strong data-vi="Báo cáo công việc hằng ngày" data-kr="일일 업무 보고">Báo cáo công việc hằng ngày</strong><span class="desc" data-vi="Nhập và xem báo cáo công việc hằng ngày." data-kr="일일 업무 보고 작성 및 조회">Nhập và xem báo cáo công việc hằng ngày.</span><span class="launch" data-vi="MỞ ỨNG DỤNG ↗" data-kr="시스템 열기 ↗">MỞ ỨNG DỤNG ↗</span></button>
             <button class="app-card" onclick="openApp('daily-plan-defect')"><span class="card-icon">📅</span><strong data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</strong><span class="desc" data-vi="Theo dõi kế hoạch sản xuất và tình hình lỗi." data-kr="생산 계획 및 불량 현황 관리">Theo dõi kế hoạch sản xuất và tình hình lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
             <button class="app-card" onclick="openApp('loss-cost')"><span class="card-icon">💰</span><strong data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</strong><span class="desc" data-vi="Theo dõi tổn thất, RMA và chi phí lỗi." data-kr="손실 및 RMA 비용 관리">Theo dõi tổn thất, RMA và chi phí lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
             <button class="app-card" onclick="openApp('material-ng-loss')"><span class="card-icon">📦</span><strong data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</strong><span class="desc" data-vi="Quản lý vật tư NG, tái chế và tiêu hao." data-kr="불량 자재, 재활용 및 소모 관리">Quản lý vật tư NG, tái chế và tiêu hao.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
@@ -147,7 +149,7 @@ body{font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--te
 </div>
 <script>
 const apps={
- 'daily-manpower':{vi:'Báo cáo nhân lực hằng ngày',kr:'일일 인원 현황표',url:'https://script.google.com/macros/s/AKfycbza2O0CmltS6Uf65gVeypvOH71mclXDOj8Yl9La87TmuCQRDUh02KkWAILQstOY4B8SXQ/exec'},
+ 'daily-manpower':{vi:'Báo cáo nhân lực hằng ngày',kr:'일일 인원 현황표',url:'/daily-manpower/'},
  'daily-plan-defect':{vi:'Kế hoạch & lỗi',kr:'생산 계획 및 불량',url:'/daily-plan-defect/'},
  'loss-cost':{vi:'Chi phí lỗi',kr:'실패 비용',url:'/loss-cost/'},
  'material-ng-loss':{vi:'Tổn thất vật tư NG',kr:'불량 자재 손실',url:'/material-ng-loss/'},
@@ -166,6 +168,7 @@ function setLanguage(next){
  if(currentApp){document.getElementById('pageTitle').textContent=apps[currentApp][lang]}
 }
 function toggleLang(){setLanguage(lang==='vi'?'kr':'vi')}
+function openWorkReport(){window.open('https://baocaocongviechangngay.pages.dev/','_blank','noopener,noreferrer');document.getElementById('sidebar').classList.remove('open')}
 function markActive(id){document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.app===id))}
 function goHome(){
  currentApp=null;frame.classList.remove('visible');frame.removeAttribute('src');
