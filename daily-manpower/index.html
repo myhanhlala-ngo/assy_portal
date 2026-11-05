@@ -913,7 +913,7 @@ const GS=(typeof google!=='undefined'&&google.script&&google.script.run)?google.
 function gsCall(fn,arg){ return new Promise((res,rej)=>{ if(!GS){rej(new Error('no-apps-script'));return;} GS.withSuccessHandler(res).withFailureHandler(e=>rej(new Error((e&&e.message)||String(e))))[fn](arg); }); }
 let NET=false;
 /* kho dữ liệu chung: mở từ trang Cloudflare → dùng cùng trang; mở file HTML trên máy / trang khác → kết nối máy chủ chung */
-const HC_REMOTE='https://baocaocongviechangngay.pages.dev';
+const HC_REMOTE='https://assy-portal.pages.dev';
 const HC_BASE=(()=>{try{const o=localStorage.getItem('dailyhc.server');if(o!=null)return o.replace(/\/$/,'');}catch(e){} return location.hostname===new URL(HC_REMOTE).hostname?'':HC_REMOTE;})();
 const hcTok=()=>{try{return localStorage.getItem('dailyhc.token')||'';}catch(e){return '';}};
 const hcH=(h)=>{const t=hcTok();return Object.assign({},h||{},t?{'x-hc-token':t}:{});};
