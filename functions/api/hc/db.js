@@ -1,7 +1,7 @@
 // /api/hc/db – document store for the manpower report (Cloudflare D1, binding: DB, table hc_docs)
-//   GET  ?since=<ms>   → { docs:[{path,ver,data,del}], now }   changes after <ms> (version snapshots excluded)
-//   GET  ?prefix=<p/>  → { docs:[…], now }                      every live document under <p/>
-//   POST { ops:[{op:"set"|"delete"|"add", path, data}] } → { ok, paths, now }
+//   GET  ?since=<ms>   → { docs:[{path,ver,data,del}], now }
+//   GET  ?prefix=<p/>  → { docs:[…], now }
+//   POST { ops:[{op:"set"|"delete"|"add"|"patch", path, data/date/fields}] }
 /* ---- auth helpers ---- */
 // Shared helpers for the manpower report API (/api/hc/*)
 // Optional passwords (Cloudflare → Settings → Variables and Secrets):
@@ -62,34 +62,83 @@ export async function onRequestGet({ request, env }) {
   }
 }
 
+const PATCH_FIELDS = new Set([
+  "hc", "hcM", "to", "toX4", "dCT", "dTV", "dX4", "nCT", "nTV", "nX4", "dX4M", "nX4M",
+  "dGT", "dQC", "dRW", "dRMA", "dDCT", "nGT", "nQC", "nRW", "nRMA", "nDCT",
+  "pDir", "pX4", "pTV", "pInd", "off"
+]);
+function validatePatch(o) {
+  const path = String(o.path || ""), date = String(o.date || ""), fields = o.fields;
+  const m = /^months\/(\d{4})-(0[1-9]|1[0-2])$/.exec(path);
+  if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !date.startsWith(path.slice(7) + "-")) return "Invalid month/date";
+  if (!fields || typeof fields !== "object" || Array.isArray(fields)) return "Invalid fields";
+  const keys = Object.keys(fields);
+  if (!keys.length || keys.length > 30) return "Invalid fields count";
+  for (const k of keys) {
+    if (!PATCH_FIELDS.has(k)) return "Field not allowed: " + k;
+    const v = fields[k];
+    if (k === "off") { if (v !== "" && v !== "sun" && v !== "hol") return "Invalid off value"; }
+    else if (k === "hcM") { if (v !== 0 && v !== 1 && v !== null) return "Invalid hcM value"; }
+    else if (v !== null && (typeof v !== "number" || !Number.isFinite(v) || v < 0)) return "Invalid numeric value: " + k;
+  }
+  return null;
+}
+
 export async function onRequestPost({ request, env }) {
   const role = await roleOf(request, env);
   if (!role) return json({ error: "login" }, 401);
-  if (role !== "edit") return json({ error: "Chế độ chỉ xem – không được sửa / 보기 전용" }, 403);
+  if (role !== "edit") return json({ error: "Chế độ chỉ xem – không được sửa" }, 403);
   try {
     const body = await request.json().catch(() => null);
     const ops = body && Array.isArray(body.ops) ? body.ops : null;
     if (!ops || !ops.length || ops.length > 50) return json({ error: "Invalid ops" }, 400);
     await ensure(env.DB);
     const last = (await env.DB.prepare("SELECT MAX(ver) AS v FROM hc_docs").first())?.v || 0;
-    const now = Math.max(Date.now(), last + 1), paths = [], stmts = [];
+    const now = Math.max(Date.now(), last + 1), paths = [], stmts = [], patchIndexes = [];
     let addedVersion = false;
     for (const o of ops) {
       let path = String(o.path || "");
       if (o.op === "add") { path = path.replace(/\/?$/, "/") + now.toString(36) + Math.random().toString(36).slice(2, 8); if (path.startsWith("versions/")) addedVersion = true; }
       if (!path || path.endsWith("/") || path.length > 200) return json({ error: "Invalid path: " + path }, 400);
       paths.push(path);
-      if (o.op === "delete") stmts.push(env.DB.prepare("INSERT INTO hc_docs (path, data, ver, del) VALUES (?, NULL, ?, 1) ON CONFLICT(path) DO UPDATE SET data = NULL, ver = excluded.ver, del = 1").bind(path, now));
+      if (o.op === "patch") {
+        const invalid = validatePatch(o);
+        if (invalid) return json({ error: invalid }, 400);
+        const fields = Object.entries(o.fields);
+        const sets = [];
+        const binds = [];
+        for (const [key, value] of fields) {
+          // Locate the day by its date inside the UPDATE itself; no stale array index is used.
+          sets.push("'$.days[' || (SELECT CAST(key AS INTEGER) FROM json_each(data, '$.days') WHERE json_extract(value, '$.date') = ? LIMIT 1) || ']." + key + "'");
+          binds.push(o.date, JSON.stringify(value));
+        }
+        const pairs = sets.map((p, i) => p + ", json(?)");
+        const sql = "UPDATE hc_docs SET data=json_set(data, " + pairs.join(", ") + ", '$.updatedAt', json(?)), ver=MAX(?, (SELECT COALESCE(MAX(ver),0)+1 FROM hc_docs)), del=0 WHERE path=? AND del=0 AND EXISTS (SELECT 1 FROM json_each(data, '$.days') WHERE json_extract(value, '$.date')=?)";
+        binds.push(JSON.stringify(new Date().toISOString()), Date.now(), path, o.date);
+        patchIndexes.push(stmts.length);
+        stmts.push(env.DB.prepare(sql).bind(...binds));
+      }
+      else if (o.op === "delete") stmts.push(env.DB.prepare("INSERT INTO hc_docs (path, data, ver, del) VALUES (?, NULL, ?, 1) ON CONFLICT(path) DO UPDATE SET data = NULL, ver = excluded.ver, del = 1").bind(path, now));
       else if (o.op === "set" || o.op === "add") {
         const data = JSON.stringify(o.data ?? null);
         if (data.length > 1900000) return json({ error: "Dữ liệu quá lớn (tối đa ~2MB/mục): " + path }, 413);
         stmts.push(env.DB.prepare("INSERT INTO hc_docs (path, data, ver, del) VALUES (?, ?, ?, 0) ON CONFLICT(path) DO UPDATE SET data = excluded.data, ver = excluded.ver, del = 0").bind(path, data, now));
-      } else return json({ error: "Unknown op: " + o.op }, 400);
+      } else if (o.op !== "patch") return json({ error: "Unknown op: " + o.op }, 400);
     }
-    await env.DB.batch(stmts);
+    const results = await env.DB.batch(stmts);
+    for (const ix of patchIndexes) {
+      const changes = results[ix] && results[ix].meta && results[ix].meta.changes;
+      if (!changes) return json({ error: "Không tìm thấy ngày cần cập nhật trong tháng" }, 404);
+    }
     if (addedVersion) /* keep the newest MAX_VERSIONS snapshots */
       await env.DB.prepare("DELETE FROM hc_docs WHERE path LIKE 'versions/%' AND path NOT IN (SELECT path FROM hc_docs WHERE path LIKE 'versions/%' ORDER BY ver DESC LIMIT ?)").bind(MAX_VERSIONS).run();
-    return json({ ok: true, paths, now });
+    const patchDocs = [];
+    // Return the authoritative month documents so the browser cache can reconcile after a patch.
+    for (const p of new Set(ops.filter(o => o.op === "patch").map(o => String(o.path)))) {
+      const r = await env.DB.prepare("SELECT * FROM hc_docs WHERE path=? AND del=0").bind(p).first();
+      if (r) patchDocs.push(row(r));
+    }
+    return json({ ok: true, paths, now, docs: patchDocs });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
