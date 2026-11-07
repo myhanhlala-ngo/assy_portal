@@ -1,0 +1,21 @@
+CLOUDFARE ASSY PORTAL – changes 2026-11-07
+
+1. functions/api/hc/db.js
+   - GET /api/hc/db is now publicly readable (including since/prefix reads).
+   - POST remains protected: onRequestPost still requires edit role.
+   - No D1 schema or stored data migration is performed.
+
+2. daily-manpower/index.html
+   - Startup checks read the auth policy without opening a login dialog.
+   - NET_REQUIRED tracks whether Cloudflare passwords are configured.
+   - Password prompt is deferred until the user activates “Sửa tay” (or another action enters edit mode).
+   - Edit mode checks for an edit-role login; view-only credentials cannot enable editing.
+   - The existing cell patch queue and polling/sync implementation are retained.
+
+Deployment notes:
+   - Deploy to Preview first.
+   - Verify anonymous viewing on a clean/incognito browser.
+   - Verify that pressing “Sửa tay” prompts for password.
+   - Verify that a view-only password does not grant edit access.
+   - Verify that unauthenticated POST requests return 401 and view-role POST requests return 403.
+   - No production deployment or D1 data changes were performed by this patch.
