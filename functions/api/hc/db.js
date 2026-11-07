@@ -45,7 +45,8 @@ async function ensure(db) {
 const row = r => ({ path: r.path, ver: r.ver, del: !!r.del, data: r.del || r.data == null ? null : JSON.parse(r.data) });
 
 export async function onRequestGet({ request, env }) {
-  if (!(await roleOf(request, env))) return json({ error: "login" }, 401);
+  // Public read access: opening the report never requires a password.
+  // All writes remain protected by the edit-role check in onRequestPost.
   try {
     await ensure(env.DB);
     const u = new URL(request.url), now = Date.now();
