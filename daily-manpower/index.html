@@ -909,12 +909,23 @@ async function flushCellPatches(id){
   if(cellPatchBusy[id]) return;
   const q=cellPatchQueue[id]; if(!q||!Object.keys(q).length) return;
   delete cellPatchQueue[id]; cellPatchBusy[id]=true;
+  const entries=Object.entries(q); let failedAt=-1, failure=null;
   try{
-    for(const [date,fields] of Object.entries(q)) await db.doc('months/'+id).patch(date,fields);
+    for(let i=0;i<entries.length;i++){
+      failedAt=i;
+      const [date,fields]=entries[i];
+      await db.doc('months/'+id).patch(date,fields);
+    }
+    failedAt=-1;
   }catch(e){
+    failure=e;
+    // Requeue only the failed and not-yet-sent dates. Successful dates must not
+    // be replayed, otherwise an older batch could overwrite newer cell values.
     const newer=cellPatchQueue[id]||(cellPatchQueue[id]={});
-    Object.entries(q).forEach(([date,fields])=>{newer[date]=Object.assign({},fields,newer[date]||{});});
-    setStatus('err','Lưu thất bại'); toast('Không lưu được thay đổi: '+(e&&e.message||e));
+    entries.slice(Math.max(0,failedAt)).forEach(([date,fields])=>{
+      newer[date]=Object.assign({},fields,newer[date]||{});
+    });
+    setStatus('err','Lưu thất bại'); toast('Không lưu được thay đổi: '+(failure&&failure.message||failure));
   }finally{
     cellPatchBusy[id]=false;
     if(cellPatchQueue[id]&&Object.keys(cellPatchQueue[id]).length){
@@ -922,7 +933,7 @@ async function flushCellPatches(id){
     }else{
       delete cellPatchQueue[id]; delete pending[id];
       if(db&&db._notifyPath) db._notifyPath('months/'+id);
-      setStatus('ok','Đã lưu '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
+      if(!failure) setStatus('ok','Đã lưu '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
     }
   }
 }
@@ -1027,7 +1038,21 @@ function makeNetDb(){
   };
   return db;
 }
-async function netProbe(){ try{ const r=await fetch(HC_BASE+'/api/hc/db?since='+(Date.now()+864e5),{cache:'no-store',credentials:'same-origin',headers:hcH()}); if(r.status===401) return 'login'; const j=r.ok?await r.json().catch(()=>null):null; return !!(j&&Array.isArray(j.docs)); }catch(e){ return false; } }
+async function netProbe(){
+  try{
+    const r=await fetch(HC_BASE+'/api/hc/db?since='+(Date.now()+864e5),{cache:'no-store',credentials:'same-origin',headers:hcH()});
+    if(r.status===401) return 'login';
+    const j=r.ok?await r.json().catch(()=>null):null;
+    if(!(j&&Array.isArray(j.docs))) return false;
+    // A protected API may allow anonymous reads; inspect the auth endpoint as well.
+    const a=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',credentials:'same-origin',headers:hcH()});
+    if(a.status===401) return 'login';
+    const aj=a.ok?await a.json().catch(()=>null):null;
+    if(aj&&aj.required&&!aj.auth) return 'login';
+    if(aj){NET_AUTH=!!aj.auth;NET_ROLE=aj.role||'view';}
+    return true;
+  }catch(e){ return false; }
+}
 
 let NET_ROLE='edit', NET_AUTH=false, loginWait=null;
 function netLogin(){
