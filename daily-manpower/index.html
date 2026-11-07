@@ -461,7 +461,7 @@ body.l-vi .hc-t th small,body.l-vi .hc-org small{font-size:inherit;font-weight:i
 .login-box input{font:inherit;font-size:15px;height:40px;border:1px solid var(--line-strong);border-radius:6px;padding:0 12px;background:var(--surface);color:var(--ink)}
 .login-box .lg-err{min-height:16px;font-size:12.5px;color:var(--bad,#c0302f)} .login-box button{height:38px;font-size:14px}
 .btn.logout{height:24px;font-size:11.5px;padding:0 8px;margin-left:6px;background:transparent;color:inherit;border-color:rgba(255,255,255,.35)}
-body.ro #aEdit,body.ro #add3,body.ro #hcEdit,body.ro #orgEdit,body.ro #orgReset,body.ro #aRestore,body.ro #aUpload,body.ro #aImport,body.ro #aAddDay,body.ro #aDelDay,body.ro #aAddMonth,body.ro #aDelMonth{display:none!important}
+body.ro #add3,body.ro #hcEdit,body.ro #orgEdit,body.ro #orgReset,body.ro #aRestore,body.ro #aUpload,body.ro #aImport,body.ro #aAddDay,body.ro #aDelDay,body.ro #aAddMonth,body.ro #aDelMonth{display:none!important}
 body.ro .t3 input,body.ro .t3 select,body.ro .t3 .x3,body.ro .cur3{pointer-events:none}
 .org-card{padding:0}
 .org-view{position:relative;height:calc(100vh - 200px);min-height:420px;max-height:calc((100vw - 64px) * 0.44 + 24px);overflow:auto;background:#f4f5f7;cursor:grab;outline:none}
@@ -968,7 +968,9 @@ function gsCall(fn,arg){ return new Promise((res,rej)=>{ if(!GS){rej(new Error('
 let NET=false;
 /* kho dữ liệu chung: mở từ trang Cloudflare → dùng cùng trang; mở file HTML trên máy / trang khác → kết nối máy chủ chung */
 const HC_REMOTE='https://assy-portal.pages.dev';
-const HC_BASE=(()=>{try{const o=localStorage.getItem('dailyhc.server');if(o!=null)return o.replace(/\/$/,'');}catch(e){} return location.hostname===new URL(HC_REMOTE).hostname?'':HC_REMOTE;})();
+// Production và mọi Preview deployment của project đều dùng API cùng origin.
+const HC_PAGES_HOST=(()=>{const h=location.hostname, root=new URL(HC_REMOTE).hostname;return h===root||h.endsWith('.'+root);})();
+const HC_BASE=(()=>{if(HC_PAGES_HOST)return '';try{const o=localStorage.getItem('dailyhc.server');if(o!=null)return o.replace(/\/$/,'');}catch(e){} return HC_REMOTE;})();
 const hcTok=()=>{try{return localStorage.getItem('dailyhc.token')||'';}catch(e){return '';}};
 const hcH=(h)=>{const t=hcTok();return Object.assign({},h||{},t?{'x-hc-token':t}:{});};
 function makeNetDb(){
@@ -979,7 +981,10 @@ function makeNetDb(){
     const j=await r.json().catch(()=>({error:'Phản hồi máy chủ không hợp lệ'}));
     if(!r.ok||j.error) throw new Error(j.error||('HTTP '+r.status)); return j;
   }
-  async function post(ops){ return apiJson(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ops})}); }
+  async function post(ops){
+    if(NET && !(await ensureNetEdit())) throw new Error('Cần đăng nhập bằng tài khoản có quyền chỉnh sửa');
+    return apiJson(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ops})});
+  }
   async function get(params={}){ const q=new URLSearchParams(params); return apiJson(API+(q.toString()?'?'+q.toString():'')); }
   function notify(changed){
     subs.forEach(s=>{
@@ -1038,24 +1043,22 @@ function makeNetDb(){
   };
   return db;
 }
-let NET_ROLE='edit', NET_AUTH=false, NET_REQUIRED=false, loginWait=null;
 async function netProbe(){
   try{
-    // The report data is readable without signing in.
     const r=await fetch(HC_BASE+'/api/hc/db?since='+(Date.now()+864e5),{cache:'no-store',credentials:'same-origin',headers:hcH()});
+    if(r.status===401) return false;
     const j=r.ok?await r.json().catch(()=>null):null;
     if(!(j&&Array.isArray(j.docs))) return false;
-    // Read the auth policy, but never open the password dialog during page load.
+    // Cho phép xem công khai; chỉ yêu cầu xác thực khi thực hiện ghi dữ liệu.
     const a=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',credentials:'same-origin',headers:hcH()});
     const aj=a.ok?await a.json().catch(()=>null):null;
-    if(aj){
-      NET_REQUIRED=!!aj.required;
-      NET_AUTH=!!aj.auth;
-      NET_ROLE=aj.role||(NET_REQUIRED?'view':'edit');
-    }
+    if(aj){NET_AUTH=!!aj.auth;NET_ROLE=aj.role||(NET_AUTH?'edit':'view');}
+    else { NET_AUTH=false; NET_ROLE='view'; }
     return true;
   }catch(e){ return false; }
 }
+
+let NET_ROLE='view', NET_AUTH=false, loginWait=null;
 function netLogin(){
   if(loginWait) return loginWait;
   loginWait=new Promise(done=>{
@@ -1067,7 +1070,7 @@ function netLogin(){
     document.body.appendChild(ov); const f=ov.querySelector('form'), inp=f.querySelector('input'), er=f.querySelector('.lg-err'); setTimeout(()=>inp.focus(),50);
     f.onsubmit=async(e)=>{ e.preventDefault(); er.textContent=''; f.querySelector('button').disabled=true;
       try{ const r=await fetch(HC_BASE+'/api/hc/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:inp.value})}); const j=await r.json().catch(()=>({})); if(j&&j.token) try{localStorage.setItem('dailyhc.token',j.token);}catch(_){}
-        if(r.ok&&j.ok){ NET_ROLE=j.role||'edit'; NET_AUTH=true; NET_REQUIRED=true; applyRole(); ov.remove(); loginWait=null; done(NET_ROLE==='edit'); return; }
+        if(r.ok&&j.ok){ NET_ROLE=j.role||'edit'; NET_AUTH=true; applyRole(); ov.remove(); loginWait=null; done(); return; }
         er.textContent=t('Sai mật khẩu, thử lại','비밀번호가 틀렸습니다'); inp.select();
       }catch(x){ er.textContent=t('Không kết nối được máy chủ','서버에 연결할 수 없습니다'); }
       f.querySelector('button').disabled=false; };
@@ -1075,27 +1078,25 @@ function netLogin(){
   return loginWait;
 }
 function applyRole(){
-  document.body.classList.toggle('ro',NET_ROLE==='view');
+  document.body.classList.toggle('ro',NET_ROLE!=='edit' || !NET_AUTH);
   const b=$('logoutBtn'); if(b) b.hidden=!NET_AUTH;
-  if(NET_ROLE==='view') toast(t('Đang xem ở chế độ chỉ xem — không sửa được số liệu','보기 전용 모드 — 수정할 수 없습니다'),4000);
 }
-async function netWhoAmI(){ if(GS) return; try{ const j=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',headers:hcH()}).then(r=>r.ok?r.json():null); if(j){ NET_REQUIRED=!!j.required; NET_AUTH=!!j.auth; NET_ROLE=j.role||(NET_REQUIRED?'view':'edit'); applyRole(); } }catch(e){} }
-async function requireEditAccess(){
-  if(!NET || !NET_REQUIRED) return true;
+async function ensureNetEdit(){
+  // Trên Cloudflare Pages (kể cả Preview), luôn xác thực trước khi bật chế độ sửa.
+  if(!NET && !HC_PAGES_HOST) return true;
   if(NET_AUTH && NET_ROLE==='edit') return true;
-  // If signed in with a view-only token, allow the user to enter the edit password.
-  const ok=await netLogin();
-  if(ok && NET_ROLE==='edit') return true;
-  toast(t('Bạn chưa có quyền chỉnh sửa báo cáo.','보고서를 수정할 권한이 없습니다.'),5000);
-  return false;
+  await netLogin();
+  applyRole();
+  return NET_AUTH && NET_ROLE==='edit';
 }
+async function netWhoAmI(){ if(GS) return; try{ const j=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',headers:hcH()}).then(r=>r.ok?r.json():null); if(j){ NET_AUTH=!!j.auth; NET_ROLE=j.role||(NET_AUTH?'edit':'view'); applyRole(); } else {NET_AUTH=false;NET_ROLE='view';applyRole();} }catch(e){NET_AUTH=false;NET_ROLE='view';applyRole();} }
 async function initStore(){
   const c=window.claude;
   if(c&&typeof c.use==='function'){
     try{[db,dl]=await Promise.all([c.use('db'),c.use('downloads')]);}catch(e){db=null;}
   }
   const probe=db?false:await netProbe();
-  if(probe==='login') await netLogin(); else if(probe) await netWhoAmI();
+  if(probe) applyRole();
   if(!db&&probe){
     NET=true; db=makeNetDb(); setStatus('saving','Đang tải dữ liệu chung…'); await db._ready;
     if(db._isEmpty()){
@@ -1462,8 +1463,7 @@ function drawCharts(){
 }
 
 /* ---------- manual editing ---------- */
-async function setEdit(on){
-  if(on && !(await requireEditAccess())) return;
+function setEdit(on){
   editMode=on; document.body.classList.toggle('editing',on);
   $('aEdit').setAttribute('aria-pressed',on);$('editLbl').textContent=on?'Đang sửa tay':'Sửa tay';$('aEdit').querySelector('small').textContent=on?'수정 중':'수기 수정';
   $('editbar').hidden=!on; document.querySelectorAll('.editbar2').forEach(x=>x.hidden=!on); updEditCount(); build(); build2();
@@ -1614,19 +1614,24 @@ tbl.addEventListener('click',e=>{
   d.off=d.off?'':(w===0?'sun':'hol'); editCount++; updEditCount(); scheduleSave(cur,[{date:d.date,k:'off'}]); render();
   toast(`${ddmm(d.date)}: ${d.off?(d.off==='hol'?'đặt là ngày lễ ★':'đặt là ngày nghỉ'):'đặt là ngày làm việc'}`);
 });
-$('aEdit').onclick=async()=>{ if(editMode) await finishEdit(); else { if(!cur){toast('Hãy thêm tháng trước');return;} await setEdit(true);} };
+$('aEdit').onclick=async()=>{
+  if(editMode){ await finishEdit(); return; }
+  if(!cur){toast('Hãy thêm tháng trước');return;}
+  if(!(await ensureNetEdit())){toast('Chưa xác thực quyền chỉnh sửa — hiện chỉ được phép xem');return;}
+  setEdit(true);
+};
 $('editDone').onclick=finishEdit;
 $('logoutBtn').onclick=async()=>{ try{ localStorage.removeItem('dailyhc.token'); await fetch(HC_BASE+'/api/hc/login',{method:'DELETE'}); }catch(e){} (window.__gasLogout?window.__gasLogout():location.reload()); }; document.querySelectorAll('.editDone2').forEach(b=>b.onclick=finishEdit);
 
 /* ---------- day / month actions ---------- */
 function emptyDay(date){const w=parseD(date).getDay();const d={date,off:w===0?'sun':''};INPUT_KEYS.forEach(k=>d[k]=null);PLAN_KEYS.forEach(k=>d[k]=null);return d;}
-$('aAddDay').onclick=async()=>{
+$('aAddDay').onclick=()=>{
   if(!cur){addMonth();return;}
   const ds=days(); const li=lastDataIdx(); const s0=calc(ds);
   let j=s0.isWork[li]?li+1:0; while(j<ds.length&&ds[j].off) j++;
   if(j>=ds.length){toast('Tháng đã nhập đủ ngày. Bấm "Thêm tháng mới" để sang tháng sau.');return;}
   if(end<j) end=ds.length-1; if(from>j) from=0;
-  if(!editMode) await setEdit(true); else render();
+  if(!editMode) setEdit(true); else render();
   focusRow(0,j,1); toast(`Nhập số liệu ngày ${ddmm(ds[j].date)}: dòng TO rồi mục ① bên dưới`);
 };
 $('aDelDay').onclick=async()=>{
