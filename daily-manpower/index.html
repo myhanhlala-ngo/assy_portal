@@ -1048,11 +1048,11 @@ async function netProbe(){
     // Read the auth policy, but never open the password dialog during page load.
     const a=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',credentials:'same-origin',headers:hcH()});
     const aj=a.ok?await a.json().catch(()=>null):null;
-    if(aj){
-      NET_REQUIRED=!!aj.required;
-      NET_AUTH=!!aj.auth;
-      NET_ROLE=aj.role||(NET_REQUIRED?'view':'edit');
-    }
+    // Editing is fail-closed: the server must explicitly report its auth policy.
+    if(!aj || typeof aj.required!=='boolean') return false;
+    NET_REQUIRED=aj.required;
+    NET_AUTH=!!aj.auth;
+    NET_ROLE=aj.role||(NET_REQUIRED?'view':'edit');
     return true;
   }catch(e){ return false; }
 }
@@ -1081,11 +1081,24 @@ function applyRole(){
 }
 async function netWhoAmI(){ if(GS) return; try{ const j=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',headers:hcH()}).then(r=>r.ok?r.json():null); if(j){ NET_REQUIRED=!!j.required; NET_AUTH=!!j.auth; NET_ROLE=j.role||(NET_REQUIRED?'view':'edit'); applyRole(); } }catch(e){} }
 async function requireEditAccess(){
-  if(!NET || !NET_REQUIRED) return true;
+  // Never allow editing merely because the network/auth state has not loaded yet.
+  if(!NET){
+    const reachable=await netProbe();
+    if(!reachable){
+      toast(t('Không xác minh được quyền sửa. Vui lòng tải lại trang hoặc kiểm tra kết nối.','수정 권한을 확인할 수 없습니다. 페이지를 새로고침하거나 연결을 확인하세요.'),6000);
+      return false;
+    }
+    NET=true;
+  }
+  // Cloudflare must explicitly confirm that authentication is enabled.
+  if(!NET_REQUIRED){
+    toast(t('Máy chủ chưa bật bảo vệ chỉnh sửa. Tạm thời chỉ cho phép xem.','서버의 수정 보호가 활성화되지 않았습니다. 현재는 보기만 가능합니다.'),6000);
+    return false;
+  }
   if(NET_AUTH && NET_ROLE==='edit') return true;
-  // If signed in with a view-only token, allow the user to enter the edit password.
+  // A view-only session may enter the edit password; only an edit role is accepted.
   const ok=await netLogin();
-  if(ok && NET_ROLE==='edit') return true;
+  if(ok && NET_AUTH && NET_ROLE==='edit') return true;
   toast(t('Bạn chưa có quyền chỉnh sửa báo cáo.','보고서를 수정할 권한이 없습니다.'),5000);
   return false;
 }
