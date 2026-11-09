@@ -1744,15 +1744,17 @@ new MutationObserver(render).observe(document.documentElement,{attributes:true,a
   function parseRaw(wb){
     const yh=+STORE.current.slice(0,4)||new Date().getFullYear(), pad=n=>String(n).padStart(2,'0');
     const MO={JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
-    const dateOf=v=>{ if(v instanceof Date) return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
+    const dateOf0=v=>{ if(v instanceof Date) return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
       const iso=toISO(v); if(iso) return iso; if(typeof v!=='string') return null; const s=v.trim(); let m;
       if(m=s.match(/^(\d{1,2})[-\/. ]?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?(?:[-\/. ,]+(\d{2,4}))?$/i)){ let y=m[3]?+m[3]:yh; if(y<100) y+=2000; return y+'-'+pad(MO[m[2].toUpperCase()])+'-'+pad(m[1]); }
       if(m=s.match(/^(\d{1,2})[\/.-](\d{1,2})$/)) return yh+'-'+pad(m[2])+'-'+pad(m[1]);
       if(m=s.match(/^(\d{1,2})월\s*(\d{1,2})일$/)) return yh+'-'+pad(m[1])+'-'+pad(m[2]);
       return null; };
+    const dateOf=v=>{ const d=dateOf0(v); if(!d) return null; const y=+d.slice(0,4); return (y>=yh-1&&y<=yh+1)?d:null; };
     const N=v=>nrm(v??'');
     const tried=[];
-    for(const sn of wb.SheetNames){
+    const SNS=[...wb.SheetNames].sort((a,b)=>(/TONGHOP|SUMMARY|종합/.test(N(b))?1:0)-(/TONGHOP|SUMMARY|종합/.test(N(a))?1:0));
+    for(const sn of SNS){
       const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''}); if(!A.length){ tried.push(sn+': trống'); continue; }
       const hi=A.slice(0,60).findIndex(r=>r.slice(0,4).some(c=>N(c).includes('MODEL'))); if(hi<0){ tried.push(sn+': không có cột MODEL'); continue; }
       const hdr=[A[hi],A[hi+1]||[]], findCol=(re,def)=>{ for(const r of hdr){ const i=r.findIndex(c=>re.test(N(c))); if(i>=0) return i; } return def; };
