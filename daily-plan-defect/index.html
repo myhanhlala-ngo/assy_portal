@@ -7327,13 +7327,6 @@ function testStorage(){
 storageOK = testStorage();
 
 function loadDB(){
-  // Synchronous fallback only. init() restores IndexedDB before first render.
-  if(storageOK){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ const parsed = JSON.parse(raw); if(parsed && parsed.days && Object.keys(parsed.days).length) return parsed; }
-    }catch(e){ console.error('loadDB localStorage error', e); }
-  }
   try{
     const snap = document.getElementById('embedded-db-snapshot');
     if(snap && snap.textContent && snap.textContent.trim() !== 'null'){
@@ -7341,6 +7334,15 @@ function loadDB(){
       if(parsed && parsed.days && Object.keys(parsed.days).length) return parsed;
     }
   }catch(e){ console.error('embedded snapshot parse error', e); }
+  if(storageOK){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && parsed.days && Object.keys(parsed.days).length) return parsed;
+      }
+    }catch(e){ console.error('loadDB error', e); }
+  }
   const seedKey = '2026-09-03';
   return { activeDate: seedKey, days: { [seedKey]: buildSeedDay() } };
 }
@@ -7374,7 +7376,8 @@ function idbSet(k, v){ return idbOpen().then(db=> new Promise((res, rej)=>{ cons
 function idbGet(k){ return idbOpen().then(db=> new Promise((res, rej)=>{ const tx=db.transaction(IDB_STORE,'readonly'); const q=tx.objectStore(IDB_STORE).get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); })); }
 let HIST_CACHE = [];
 idbGet(HISTORY_KEY).then(h=>{ if(Array.isArray(h)) HIST_CACHE = h; }).catch(()=>{});
-// Không tự xóa localStorage cũ: giữ làm nguồn dự phòng/migration an toàn.
+// dọn bản lưu localStorage cũ của chính báo cáo này (nếu có) để giải phóng bộ nhớ
+try{ localStorage.removeItem('intops_laprap_report_db_v1'); localStorage.removeItem('intops_laprap_report_history_v1'); }catch(e){}
 
 let saveTimer = null, saveWarned = false;
 function saveDB(pushHist){
@@ -7385,7 +7388,6 @@ function saveDB(pushHist){
     idbSet(STORAGE_KEY, snap).then(()=>{
       if(pushHist!==false) pushHistory(snap);
       setSavingIndicator(false);
-      dpQueueSync(snap);
     }).catch(err=>{
       console.warn('IndexedDB không dùng được, thử localStorage', err);
       try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(snap)); setSavingIndicator(false); }
@@ -10747,145 +10749,32 @@ function updateDelMonthPreview(){
   el.innerHTML = `Sẽ xóa toàn bộ <b>${count}</b> ngày dữ liệu trong ${monthLabel(monthVal)}. Hành động này có thể khôi phục qua "Lịch sử phiên bản".<br><span class="ko">${monthLabel(monthVal)}의 데이터 ${count}개 날짜가 모두 삭제됩니다. "버전 기록"에서 복원 가능합니다.</span>`;
 }
 
-
-/* ===== D1 SYNC - DAILY PLAN & DEFECT =====
-   Uses the existing /api/hc/login token. Local IndexedDB remains the offline source.
-   First-time import requires explicit confirmation. */
-const DP_SYNC_URL = '/api/daily-plan-defect/db';
-const DP_LOGIN_URL = '/api/hc/login';
-const DP_TOKEN_KEY = 'dailyhc.token';
-const DP_VER_KEY = 'intops_ng_d1_ver_v1';
-const DP_DIRTY_KEY = 'intops_ng_d1_dirty_v1';
-let DP_SERVER_VER = 0, DP_SYNC_BUSY = false, DP_SYNC_TIMER = null, DP_POLL_TIMER = null;
-let DP_SYNC_ENABLED = true, DP_REMOTE_CONFLICT = false;
-function dpToken(){ try{return localStorage.getItem(DP_TOKEN_KEY)||'';}catch(e){return '';} }
-async function dpLogin(){
-  let pw = window.prompt('Nhập mật khẩu hệ thống ASSY để đồng bộ / ASSY 시스템 비밀번호를 입력하세요');
-  if(pw===null) return false;
-  const r=await fetch(DP_LOGIN_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:pw})});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.ok||!j.token){ alert('Đăng nhập không thành công: '+(j.error||r.status)); return false; }
-  try{localStorage.setItem(DP_TOKEN_KEY,j.token);}catch(e){}
-  return true;
-}
-async function dpRequest(url,opts={}){
-  let token=dpToken();
-  const go=()=>fetch(url,{...opts,headers:{...(opts.headers||{}),'x-hc-token':token}});
-  let r=await go();
-  if(r.status===401){ if(!await dpLogin()) throw new Error('login_required'); token=dpToken(); r=await go(); }
-  return r;
-}
-async function dpGetRemote(){
-  const r=await dpRequest(DP_SYNC_URL,{method:'GET'});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
-  return j.doc;
-}
-async function dpPutRemote(data,expectedVer){
-  const r=await dpRequest(DP_SYNC_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data,expectedVer})});
-  const j=await r.json().catch(()=>({}));
-  if(r.status===409){DP_REMOTE_CONFLICT=true;throw new Error('version_conflict');}
-  if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
-  DP_SERVER_VER=Number(j.ver)||expectedVer+1;
-  try{localStorage.setItem(DP_VER_KEY,String(DP_SERVER_VER));localStorage.removeItem(DP_DIRTY_KEY);}catch(e){}
-  DP_REMOTE_CONFLICT=false;
-  return j;
-}
-function dpHasData(x){return !!(x&&x.days&&Object.keys(x.days).length);}
-async function dpBootstrap(){
-  try{DP_SERVER_VER=Number(localStorage.getItem(DP_VER_KEY)||0)||0;}catch(e){DP_SERVER_VER=0;}
-  if(!DP_SYNC_ENABLED)return;
-  try{
-    const remote=await dpGetRemote();
-    if(remote&&dpHasData(remote.data)){
-      DP_SERVER_VER=Number(remote.ver)||0;
-      const localText=JSON.stringify(DB), remoteText=JSON.stringify(remote.data);
-      if(dpHasData(DB) && localText!==remoteText){
-        // Preserve both sides: never silently replace a different local dataset.
-        DP_REMOTE_CONFLICT=true;
-        const useServer=window.confirm('D1 đã có dữ liệu và dữ liệu trên máy này khác với máy chủ.\n\nOK: tải dữ liệu máy chủ về máy này.\nCancel: giữ dữ liệu trên máy này và tạm dừng đồng bộ để tránh ghi đè.');
-        if(useServer){DB=remote.data;await idbSet(STORAGE_KEY,JSON.parse(JSON.stringify(DB)));try{localStorage.setItem(DP_VER_KEY,String(DP_SERVER_VER));localStorage.removeItem(DP_DIRTY_KEY);}catch(e){}DP_REMOTE_CONFLICT=false;}
-        else {toast('Đã giữ dữ liệu trên máy này. Đồng bộ đang tạm dừng do khác biệt dữ liệu.',true);}
-      }else{
-        DB=remote.data;await idbSet(STORAGE_KEY,JSON.parse(JSON.stringify(DB)));
-        try{localStorage.setItem(DP_VER_KEY,String(DP_SERVER_VER));localStorage.removeItem(DP_DIRTY_KEY);}catch(e){}
-      }
-    }else if(dpHasData(DB)){
-      const ok=window.confirm('D1 chưa có dữ liệu Kế hoạch & lỗi. Bạn có muốn nhập dữ liệu hiện có trên máy này lên máy chủ lần đầu không?\n\nChỉ chọn OK nếu đây là máy đang có dữ liệu chuẩn.');
-      if(ok){await dpPutRemote(DB,0);}
-      else {DP_REMOTE_CONFLICT=true;toast('Đã giữ dữ liệu cục bộ. Đồng bộ D1 tạm dừng cho đến khi xác nhận nhập dữ liệu.',true);}
-    }
-  }catch(e){
-    console.warn('D1 bootstrap unavailable; continue offline',e);
-    if(e.message==='version_conflict') toast('Dữ liệu máy chủ đã thay đổi. Tạm dừng đồng bộ để tránh ghi đè.',true);
-    else if(e.message!=='login_required') toast('Chưa kết nối được D1. Dữ liệu vẫn lưu trên máy này.',true);
+// SAFETY FIX: independent delegated handlers for Add Day and modal Cancel/Close.
+// These keep the controls working even if an earlier bindEvents handler throws.
+document.addEventListener('click', function(e){
+  const addBtn = e.target.closest && e.target.closest('#btnAddDay');
+  if (addBtn) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const dateInput = document.getElementById('newDayDate');
+    const workshopInput = document.getElementById('newDayWorkshop');
+    const emptySeed = document.querySelector('input[name=seedType][value=empty]');
+    if (dateInput) dateInput.value = '';
+    if (workshopInput) workshopInput.value = defaultWorkshop();
+    if (emptySeed) emptySeed.checked = true;
+    openModal('modalAddDay');
+    return;
   }
-  dpStartPolling();
-}
-function dpQueueSync(data){
-  if(!DP_SYNC_ENABLED)return;
-  try{localStorage.setItem(DP_DIRTY_KEY,'1');}catch(e){}
-  clearTimeout(DP_SYNC_TIMER);
-  DP_SYNC_TIMER=setTimeout(async()=>{
-    if(DP_SYNC_BUSY||DP_REMOTE_CONFLICT)return;
-    DP_SYNC_BUSY=true;
-    try{await dpPutRemote(data,DP_SERVER_VER);}
-    catch(e){
-      console.warn('D1 save pending',e);
-      if(e.message==='version_conflict') toast('XUNG ĐỘT DỮ LIỆU: máy chủ đã có phiên bản mới. Dữ liệu trên máy này vẫn được giữ, chưa ghi đè.',true);
-      else toast('Chưa đồng bộ được D1. Dữ liệu vẫn được lưu cục bộ.',true);
-    }finally{DP_SYNC_BUSY=false;}
-  },900);
-}
-function dpStartPolling(){
-  if(DP_POLL_TIMER)return;
-  DP_POLL_TIMER=setInterval(async()=>{
-    if(DP_SYNC_BUSY||document.hidden||DP_REMOTE_CONFLICT)return;
-    try{
-      const remote=await dpGetRemote(); if(!remote||!dpHasData(remote.data))return;
-      const rv=Number(remote.ver)||0;
-      if(rv<=DP_SERVER_VER)return;
-      let dirty=false;try{dirty=localStorage.getItem(DP_DIRTY_KEY)==='1';}catch(e){}
-      if(dirty){DP_REMOTE_CONFLICT=true;toast('Máy chủ có dữ liệu mới trong khi máy này còn thay đổi chưa đồng bộ. Vui lòng kiểm tra trước khi tiếp tục.',true);return;}
-      DB=remote.data;DP_SERVER_VER=rv;
-      await idbSet(STORAGE_KEY,JSON.parse(JSON.stringify(DB)));
-      try{localStorage.setItem(DP_VER_KEY,String(rv));}catch(e){}
-      if(!DB.days[DB.activeDate])DB.activeDate=Object.keys(DB.days).sort().pop();
-      populateDaySelect();renderAll();
-      toast('Đã nhận dữ liệu mới từ máy chủ / 서버 데이터 업데이트 완료');
-    }catch(e){console.warn('D1 polling skipped',e);}
-  },10000);
-}
-
-// Robust startup: this page may be injected by the portal after DOMContentLoaded.
-let DP_INIT_STARTED = false;
-function dpRunInitOnce(){
-  if(DP_INIT_STARTED) return;
-  DP_INIT_STARTED = true;
-  init().catch(e=>{ console.error('Daily Plan & Defect initialization failed:', e); try{toast('Lỗi khởi tạo trang. Dữ liệu cục bộ vẫn được giữ.', true);}catch(_){} });
-}
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', dpRunInitOnce, {once:true});
-}else{
-  queueMicrotask(dpRunInitOnce);
-}
-async function init(){
-  // Khôi phục dữ liệu cục bộ trước lần render đầu tiên để không hiển thị snapshot cũ đè lên dữ liệu người dùng.
-  try{
-    const saved = await idbGet(STORAGE_KEY);
-    if(saved && saved.days && Object.keys(saved.days).length){ DB = saved; }
-    else if(storageOK){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ const legacy = JSON.parse(raw); if(legacy && legacy.days && Object.keys(legacy.days).length){ DB = legacy; idbSet(STORAGE_KEY, legacy).catch(e=>console.warn('Migration IndexedDB error',e)); } }
-    }
-  }catch(e){ console.warn('Không thể khôi phục IndexedDB, giữ dữ liệu dự phòng hiện có',e); }
-  if(!DB.days || !Object.keys(DB.days).length){
-    const snap = document.getElementById('embedded-db-snapshot');
-    try{ const parsed = snap && JSON.parse(snap.textContent); if(parsed && parsed.days && Object.keys(parsed.days).length) DB = parsed; }catch(e){}
+  const closeBtn = e.target.closest && e.target.closest('[data-close="modalAddDay"]');
+  if (closeBtn) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closeModal('modalAddDay');
   }
-  if(!DB.days[DB.activeDate]) DB.activeDate = Object.keys(DB.days).sort().pop();
-  await dpBootstrap();
-  if(!DB.days[DB.activeDate]) DB.activeDate = Object.keys(DB.days).sort().pop();
+}, true);
+
+document.addEventListener('DOMContentLoaded', init);
+function init(){
   populateDaySelect();
   renderAll();
   bindEvents();
