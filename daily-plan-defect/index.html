@@ -10857,7 +10857,18 @@ function dpStartPolling(){
   },10000);
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Robust startup: this page may be injected by the portal after DOMContentLoaded.
+let DP_INIT_STARTED = false;
+function dpRunInitOnce(){
+  if(DP_INIT_STARTED) return;
+  DP_INIT_STARTED = true;
+  init().catch(e=>{ console.error('Daily Plan & Defect initialization failed:', e); try{toast('Lỗi khởi tạo trang. Dữ liệu cục bộ vẫn được giữ.', true);}catch(_){} });
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', dpRunInitOnce, {once:true});
+}else{
+  queueMicrotask(dpRunInitOnce);
+}
 async function init(){
   // Khôi phục dữ liệu cục bộ trước lần render đầu tiên để không hiển thị snapshot cũ đè lên dữ liệu người dùng.
   try{
