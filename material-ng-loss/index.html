@@ -1744,15 +1744,17 @@ new MutationObserver(render).observe(document.documentElement,{attributes:true,a
   function parseRaw(wb){
     const yh=+STORE.current.slice(0,4)||new Date().getFullYear(), pad=n=>String(n).padStart(2,'0');
     const MO={JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
-    const dateOf=v=>{ if(v instanceof Date) return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
+    const dateOf0=v=>{ if(v instanceof Date) return v.getFullYear()+'-'+pad(v.getMonth()+1)+'-'+pad(v.getDate());
       const iso=toISO(v); if(iso) return iso; if(typeof v!=='string') return null; const s=v.trim(); let m;
       if(m=s.match(/^(\d{1,2})[-\/. ]?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?(?:[-\/. ,]+(\d{2,4}))?$/i)){ let y=m[3]?+m[3]:yh; if(y<100) y+=2000; return y+'-'+pad(MO[m[2].toUpperCase()])+'-'+pad(m[1]); }
       if(m=s.match(/^(\d{1,2})[\/.-](\d{1,2})$/)) return yh+'-'+pad(m[2])+'-'+pad(m[1]);
       if(m=s.match(/^(\d{1,2})월\s*(\d{1,2})일$/)) return yh+'-'+pad(m[1])+'-'+pad(m[2]);
       return null; };
+    const dateOf=v=>{ const d=dateOf0(v); if(!d) return null; const y=+d.slice(0,4); return (y>=yh-1&&y<=yh+1)?d:null; };
     const N=v=>nrm(v??'');
     const tried=[];
-    for(const sn of wb.SheetNames){
+    const SNS=[...wb.SheetNames].sort((a,b)=>(/TONGHOP|SUMMARY|종합/.test(N(b))?1:0)-(/TONGHOP|SUMMARY|종합/.test(N(a))?1:0));
+    for(const sn of SNS){
       const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''}); if(!A.length){ tried.push(sn+': trống'); continue; }
       const hi=A.slice(0,60).findIndex(r=>r.slice(0,4).some(c=>N(c).includes('MODEL'))); if(hi<0){ tried.push(sn+': không có cột MODEL'); continue; }
       const hdr=[A[hi],A[hi+1]||[]], findCol=(re,def)=>{ for(const r of hdr){ const i=r.findIndex(c=>re.test(N(c))); if(i>=0) return i; } return def; };
@@ -1777,6 +1779,39 @@ new MutationObserver(render).observe(document.documentElement,{attributes:true,a
       const cnt={}; dcols.forEach(([,d])=>cnt[d.slice(0,7)]=(cnt[d.slice(0,7)]||0)+1);
       const mk=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
       return {mk,M:{days:blocks.map(x=>x[1]),rows,sheet:sn}};
+    }
+    // --- Mẫu "Bảng chi tiết Loss · dd/mm/yyyy" (sheet "Ngày dd-mm" xuất từ HTML, có thể nhiều sheet ngày) ---
+    { const dayRows=new Map(), order=[], days=[], used=[];
+      for(const sn of SNS){
+        const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''}); if(!A.length) continue;
+        const hi=A.slice(0,60).findIndex(r=>r.slice(0,4).some(c=>N(c).includes('MODEL'))); if(hi<0) continue;
+        const title=A.slice(0,hi).map(r=>r.map(c=>String(c??'')).join(' ')).join(' ');
+        if(/LŨY KẾ|LUY KE|누계/i.test(title)||/^(LŨY KẾ|LUY KE|누계)/i.test(sn.trim())) continue;
+        let d=null, m=title.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if(m) d=m[3]+'-'+pad(m[2])+'-'+pad(m[1]);
+        else if(m=sn.match(/(\d{1,2})[-\/.](\d{1,2})\s*$/)) d=yh+'-'+pad(m[2])+'-'+pad(m[1]);
+        if(!d||!dateOf(d)||days.includes(d)) continue;
+        const H=(A[hi]||[]).map(c=>N(c)), col=re=>H.findIndex(h=>re.test(h));
+        const cM=H.findIndex(h=>h.includes('MODEL')), cC=col(/품목코드|CODE/), cN=col(/품목명|ITEM/), cU=col(/소요량|DINHMUC|USAGE/), cP=col(/단가|DONGIA|PRICE/);
+        const cs=[col(/투입|TONGSLSX/),col(/양품|SOLUONGOK|LUONGOK/),col(/LOSSAUTO/),col(/LOSSRW/),col(/DAUVAO/)];
+        if(cC<0||cN<0||cs.some(x=>x<0)) continue;
+        const di=days.length; days.push(d); used.push(sn); let model=''; const seen={};
+        for(const r of A.slice(hi+1)){
+          const mv=String(r[cM]??'').trim(); if(mv&&!/합계|TỔNG|TONG|TOTAL/i.test(mv)) model=mv.replace(/\s+/g,' ');
+          const code=String(r[cC]??'').trim(), name=String(r[cN]??'').trim();
+          if(!name||/^total\b/i.test(code)) continue;
+          const labor=/nhân lực/i.test(name)?1:0, k0=model+'|'+code+'|'+name+'|'+labor; seen[k0]=(seen[k0]||0)+1; const k=k0+'#'+seen[k0];
+          let row=dayRows.get(k); if(!row){ row=[model,code,name,num(r[cU]),num(r[cP]),[],labor]; dayRows.set(k,row); order.push(k); }
+          row[5][di]=cs.map(x=>num(r[x]));
+        }
+      }
+      if(days.length){
+        const idx=days.map((d,i)=>[d,i]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0), sd=idx.map(([d])=>d);
+        const rows=order.map(k=>{ const r=dayRows.get(k); r[5]=idx.map(([,i])=>r[5][i]||[0,0,0,0,0]); return r; });
+        if(rows.length){ const cnt={}; sd.forEach(d=>cnt[d.slice(0,7)]=(cnt[d.slice(0,7)]||0)+1);
+          const mk=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+          return {mk,M:{days:sd,rows,sheet:used.join(', ')}}; }
+      }
     }
     throw new Error('Không tìm thấy sheet có cột MODEL và các ngày ở hàng tiêu đề (định dạng sheet “tổng hợp”). Đã kiểm tra: '+tried.join('; '));
   }
