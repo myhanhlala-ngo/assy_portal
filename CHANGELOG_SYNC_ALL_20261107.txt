@@ -1,0 +1,50 @@
+ASSY PORTAL – ĐỒNG BỘ DỮ LIỆU CHUNG CHO CÁC ỨNG DỤNG CÒN LẠI (07/11/2026)
+==========================================================================
+
+Mô hình giống Báo cáo nhân lực: dữ liệu nằm trong Cloudflare D1 (binding DB sẵn có của assy-portal),
+XEM công khai – GHI cần mật khẩu sửa HC_PASSWORD (đăng nhập 1 lần dùng cho mọi ứng dụng trong portal).
+Không cần tạo thêm D1, biến môi trường hay secret mới. Bảng mới tự tạo ở lần gọi đầu tiên.
+
+1. API mới
+   functions/api/sync/[app].js   – kho dữ liệu chung cho 5 ứng dụng
+       GET  /api/sync/<app>?since=<ver>   (công khai)
+       POST /api/sync/<app>               (cần quyền sửa; 401 chưa đăng nhập, 403 mật khẩu chỉ xem)
+       GET  /api/sync/<app>?history=<khóa> và ?hid=<id>  – xem/khôi phục bản cũ (giữ 400 bản gần nhất/ứng dụng)
+       Bảng D1: sync_kv, sync_hist
+   functions/api/mqis/[[path]].js – máy chủ cho MQIS (đúng giao thức "máy chủ" có sẵn trong trang MQIS)
+       /api/mqis/rev · /api/mqis/month · /api/mqis/op · /api/mqis/img/<id>
+       Ảnh dán vào MQIS được tách sang bảng mqis_img để mỗi tháng không vượt giới hạn 2MB/dòng của D1.
+       Bảng D1: mqis_month, mqis_meta, mqis_img
+
+2. Ứng dụng được gắn đồng bộ (huy hiệu ☁ "Đã đồng bộ hh:mm:ss", tự cập nhật mỗi 10 giây)
+   - daily-plan-defect (Kế hoạch & lỗi)   – mỗi ngày 1 mục dữ liệu
+   - quality (Quản lý chất lượng)          – mỗi ngày / tháng 1 mục
+   - material-ng-loss (Tổn thất vật tư NG) – mỗi tháng 1 mục
+   - loss-cost (Chi phí lỗi)               – ghi chú theo ngày, kho tháng, số liệu tháng hiện tại
+   - revenue-manpower (Doanh thu/Nhân lực) – SX/NG/tiền SX theo ngày, nhân lực theo tháng
+   - mqis                                  – trỏ về /api/mqis, gửi kèm đăng nhập; menu "🔒 Đăng nhập để sửa…"
+   Các thiết lập hiển thị riêng từng người (ngày đang xem, ngôn ngữ, đơn vị tiền, giao diện) KHÔNG đồng bộ.
+
+3. Sửa lỗi
+   - daily-plan-defect/index.html có 2 đoạn script "cầu nối" của môi trường xem trước Claude bị lưu nhầm vào file
+     (ghi đè window.fetch và URL.createObjectURL). Đã gỡ bỏ → trang gọi mạng được, nút tải file hoạt động bình thường.
+
+4. Không thay đổi
+   - daily-manpower, production-ops-plan, index.html (portal), functions/api/hc/*: giữ nguyên.
+   - Không xóa/sửa dữ liệu D1 hiện có (bảng hc_docs giữ nguyên).
+
+5. Lần chạy đầu tiên sau khi deploy (QUAN TRỌNG)
+   - Khi máy chủ chưa có dữ liệu của một ứng dụng, người ĐÃ ĐĂNG NHẬP QUYỀN SỬA mở ứng dụng đó đầu tiên
+     sẽ đưa dữ liệu trên máy mình lên làm dữ liệu gốc. Người xem chưa đăng nhập không tải lên được
+     (huy hiệu cam "Chưa có dữ liệu chung – bấm để đăng nhập & tải lên").
+   - Vì vậy: mở lần lượt 6 ứng dụng trên máy có dữ liệu mới nhất, bấm huy hiệu → nhập mật khẩu sửa → chờ "Đã đồng bộ".
+   - Từ đó dữ liệu trên D1 là chuẩn: cập nhật số liệu bằng các nút Upload/Nạp Excel ngay trên web,
+     không cần tải HTML mới rồi deploy lại nữa.
+
+6. Kiểm thử đã chạy (cục bộ bằng wrangler pages dev + D1 giả lập, 2 trình duyệt)
+   - 6/6 ứng dụng: tải lên dữ liệu gốc, người xem ẩn danh mở thấy đúng dữ liệu, không bị hỏi mật khẩu, không lỗi JS.
+   - 6/6: máy A sửa → máy B thấy trong ≤ 12 giây; B (chưa đăng nhập) sửa → hiện hộp đăng nhập;
+     mật khẩu chỉ xem bị từ chối; mật khẩu sửa → lưu được → A thấy.
+   - Mở trình duyệt mới sau khi sửa → thấy dữ liệu mới (không bị dữ liệu cũ trong file HTML đè).
+   - Xóa ngày ở A → B mất ngày đó; sửa ô thật trên giao diện (Tổn thất vật tư, chế độ Sửa tay) → lên D1.
+   - Chạy trong iframe của portal (/#daily-plan-defect) → tự vẽ lại khi có dữ liệu mới.
