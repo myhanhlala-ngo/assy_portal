@@ -75,8 +75,42 @@ body.collapsed .nav{justify-content:center;padding:10px 0}
 /* ---------- main ---------- */
 .main{position:fixed;top:var(--top-h);right:0;bottom:0;left:var(--side-w);transition:left .18s ease}
 body.collapsed .main{left:var(--side-c)}
-#appFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
-#appFrame.show{display:block}
+.appf{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;visibility:hidden;z-index:1}
+.appf.show{visibility:visible;z-index:2}
+/* ---------- auto rotate ---------- */
+.autob.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.autob .cd{font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)}
+.apanel{position:fixed;top:calc(var(--top-h) + 6px);right:16px;width:440px;max-height:calc(100vh - var(--top-h) - 24px);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 50px rgba(2,8,23,.22);z-index:90;display:none}
+.apanel.show{display:block}
+.apanel .ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.apanel .ph b{font-size:15px;color:var(--navy)}.apanel .ph small{display:block;font-size:12px;color:var(--ink-3);font-weight:400}
+.apanel .x{border:0;background:transparent;font-size:20px;color:var(--ink-3);width:32px;height:32px;border-radius:8px}.apanel .x:hover{background:#f1f5f9}
+.apanel .pb{padding:12px 16px}
+.apanel .row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px;color:var(--ink-2)}
+.apanel .row label{flex:1}
+.apanel .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.apanel .chips button{border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--ink-2)}
+.apanel .chips button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.apanel .lst{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
+.apanel .it{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line);font-size:13px}
+.apanel .it:first-child{border-top:0}
+.apanel .it .nm{flex:1;display:flex;flex-direction:column;line-height:1.2}.apanel .it .nm small{font-size:11px;color:var(--ink-3)}
+.apanel .it input[type=number]{width:70px;height:30px;border:1px solid var(--line);border-radius:6px;padding:0 6px;text-align:right;font:inherit}
+.apanel .it .u{font-size:12px;color:var(--ink-3);width:22px}
+.apanel .it input[type=checkbox],.apanel .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--navy)}
+.apanel .pf{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--line);background:#f8fafc;border-radius:0 0 12px 12px}
+.apanel .pf .sum{font-size:12px;color:var(--ink-3)}
+.btnp{height:36px;padding:0 16px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:600;font-size:13.5px}
+.btnp.stop{background:#dc2626}
+.abar{position:fixed;left:0;right:0;top:var(--top-h);height:3px;background:transparent;z-index:45;pointer-events:none;display:none}
+.abar i{display:block;height:100%;width:100%;background:var(--brand);transform-origin:left center}
+body.auto .abar{display:block}
+.ahint{position:fixed;right:18px;bottom:18px;z-index:85;background:var(--navy);color:#fff;border-radius:10px;padding:8px 10px 8px 14px;display:none;align-items:center;gap:10px;font-size:13px;box-shadow:0 10px 30px rgba(2,8,23,.3)}
+body.auto .ahint{display:flex}
+.ahint .t{font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand);min-width:38px;text-align:right}
+.ahint button{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;height:28px;padding:0 9px;font-size:12.5px}
+.ahint button:hover{background:rgba(255,255,255,.2)}
+.ahint .ps{color:#fbbf24;font-size:12px}
 .bar{position:absolute;left:0;top:0;height:3px;width:0;background:var(--brand);z-index:5;transition:width .5s ease,opacity .3s}
 .bar.run{width:75%}.bar.done{width:100%;opacity:0}
 
@@ -145,6 +179,7 @@ body.collapsed .main{left:var(--side-c)}
     <button class="tbtn" onclick="reloadApp()" title="Tải lại ứng dụng"><svg class="ico" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span class="vi">Tải lại</span><span class="kr">새로고침</span></button>
     <button class="tbtn" onclick="openExternal()" title="Mở ứng dụng trong tab riêng"><svg class="ico" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span class="vi">Tab riêng</span><span class="kr">새 탭</span></button>
   </div>
+  <button class="tbtn autob" id="autoBtn" onclick="togglePanel()" title="Trình chiếu tự động giữa các menu"><svg class="ico" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.6M20 4v4.6h-4.6M20 12a8 8 0 0 1-13.7 5.7L4 15.4M4 20v-4.6h4.6"/></svg><span class="vi">Tự động</span><span class="kr">자동 순환</span><span class="cd" id="autoCd"></span></button>
   <div class="seg" role="group" aria-label="Ngôn ngữ"><button data-l="vi" onclick="setLanguage('vi')">VI</button><button data-l="kr" onclick="setLanguage('kr')">KR</button></div>
 </header>
 
@@ -153,11 +188,25 @@ body.collapsed .main{left:var(--side-c)}
   <div class="foot"><b>ASSY DIGITAL PORTAL</b><span><br>Cloudflare Pages · D1 · v2026.11</span></div>
 </aside>
 <div class="tip" id="tip"></div>
+<div class="abar"><i id="abarI"></i></div>
+<div class="apanel" id="apanel">
+  <div class="ph"><div><b><span class="vi">Trình chiếu tự động</span><span class="kr">자동 순환 표시</span></b><small><span class="vi">Tự chuyển giữa các menu theo thời gian định sẵn – dùng cho màn hình TV xưởng</span><span class="kr">설정한 시간마다 메뉴 자동 전환 – 현장 TV 모니터용</span></small></div><button class="x" onclick="togglePanel(false)" aria-label="Đóng">×</button></div>
+  <div class="pb">
+    <div class="row"><b style="color:var(--ink)"><span class="vi">Thời gian mỗi menu</span><span class="kr">메뉴별 표시 시간</span></b></div>
+    <div class="chips" id="aChips"></div>
+    <div class="row"><input type="checkbox" id="aPause"><label for="aPause"><span class="vi">Tạm dừng 60 giây khi có người thao tác (chuột / bàn phím)</span><span class="kr">사용자 조작 시 60초 일시정지</span></label></div>
+    <div class="row"><input type="checkbox" id="aFull"><label for="aFull"><span class="vi">Toàn màn hình khi bắt đầu (thu gọn menu)</span><span class="kr">시작 시 전체 화면 (메뉴 접기)</span></label></div>
+    <div class="row" style="margin-top:12px"><b style="color:var(--ink)"><span class="vi">Menu tham gia &amp; thời gian riêng</span><span class="kr">순환 메뉴 및 개별 시간</span></b></div>
+    <div class="lst" id="aList"></div>
+  </div>
+  <div class="pf"><span class="sum" id="aSum"></span><button class="btnp" id="aGo" onclick="autoStartStop()"></button></div>
+</div>
+<div class="ahint" id="ahint"><span><span class="vi">Tự động</span><span class="kr">자동</span> · <b id="ahName"></b></span><span class="ps" id="ahPs"></span><span class="t" id="ahT"></span><button onclick="autoPauseToggle()" id="ahP">⏸</button><button onclick="autoNext()" title="Menu tiếp">⏭</button><button onclick="autoStop()" title="Dừng">■</button></div>
 
 <main class="main" id="main">
   <div class="bar" id="bar"></div>
   <section id="home"></section>
-  <iframe id="appFrame" title="ASSY application" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <div id="frames"></div>
 </main>
 
 <script>
@@ -194,7 +243,8 @@ const apps={
  'mqis':{g:'qa',code:'QA-03',icon:'chart',vi:'MQIS',kr:'고객 불량 (MQIS)',url:'/mqis/',dvi:'Lỗi phát sinh tại khách hàng, trạng thái xử lý và ảnh lỗi.',dkr:'고객사 발생 불량 · 처리 현황'}
 };
 let currentApp=null,lang='vi';
-const $=id=>document.getElementById(id),frame=$('appFrame');
+const $=id=>document.getElementById(id),FR={};
+function frameOf(id){if(!FR[id]){const f=document.createElement('iframe');f.className='appf';f.title=apps[id].vi;f.allow='clipboard-read; clipboard-write; fullscreen';f.addEventListener('load',()=>{if(id===currentApp)$('bar').classList.add('done')});f.src=apps[id].url;FR[id]=f;$('frames').appendChild(f);startBar()}return FR[id]}
 const T=(vi,kr)=>`<span class="vi">${vi}</span><span class="kr">${kr}</span>`;
 try{lang=localStorage.getItem('assy_portal_lang')||'vi';if(localStorage.getItem('assy_portal_side')==='c')document.body.classList.add('collapsed')}catch(e){}
 
@@ -235,12 +285,12 @@ function setLanguage(next){
  lang=next==='kr'?'kr':'vi';document.body.dataset.lang=lang;document.documentElement.lang=lang==='vi'?'vi':'ko';
  document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
  try{localStorage.setItem('assy_portal_lang',lang)}catch(e){}
- setCrumb();tick();
+ setCrumb();tick();if(typeof renderPanel==='function'&&$('apanel').classList.contains('show'))renderPanel();if(typeof aPaint==='function'&&AR.on)aPaint();
 }
 function toggleLang(){setLanguage(lang==='vi'?'kr':'vi')}
 function markActive(id){document.querySelectorAll('.nav').forEach(el=>el.classList.toggle('on',el.dataset.app===id))}
 function goHome(){
- currentApp=null;frame.classList.remove('show');frame.removeAttribute('src');delete frame.dataset.app;
+ currentApp=null;Object.values(FR).forEach(f=>f.classList.remove('show'));
  $('home').style.display='block';$('appAct').classList.remove('show');
  markActive('home');setCrumb();history.replaceState(null,'',location.pathname);document.body.classList.remove('mopen');
 }
@@ -248,13 +298,12 @@ function openWorkReport(){openApp('daily-work-report')}
 function openApp(id){
  if(!apps[id])return;
  currentApp=id;markActive(id);setCrumb();
- $('home').style.display='none';$('appAct').classList.add('show');frame.classList.add('show');
- if(frame.dataset.app!==id){frame.dataset.app=id;startBar();frame.src=apps[id].url}
+ $('home').style.display='none';$('appAct').classList.add('show');
+ const f=frameOf(id);Object.values(FR).forEach(x=>x.classList.toggle('show',x===f));
  history.replaceState(null,'',location.pathname+'#'+id);document.body.classList.remove('mopen');
 }
 function startBar(){const b=$('bar');b.className='bar';void b.offsetWidth;b.classList.add('run')}
-frame.addEventListener('load',()=>{const b=$('bar');b.classList.add('done')});
-function reloadApp(){if(currentApp){startBar();try{frame.contentWindow.location.reload()}catch(e){frame.src=apps[currentApp].url}}}
+function reloadApp(){if(currentApp){const f=FR[currentApp];startBar();try{f.contentWindow.location.reload()}catch(e){f.src=apps[currentApp].url}}}
 function openExternal(){if(currentApp)window.open(apps[currentApp].url,'_blank','noopener')}
 
 const DOW={vi:['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'],kr:['일','월','화','수','목','금','토']};
@@ -271,6 +320,64 @@ const tip=$('tip');
 $('nav').addEventListener('mouseover',e=>{const n=e.target.closest('.nav');if(!n||!document.body.classList.contains('collapsed'))return;const r=n.getBoundingClientRect();tip.textContent=n.dataset.tip||'';tip.style.left=(r.right+10)+'px';tip.style.top=(r.top+r.height/2-14)+'px';tip.style.display='block'});
 $('nav').addEventListener('mouseout',()=>tip.style.display='none');
 window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(apps[id])openApp(id);else goHome()});
+
+
+/* ===== Trình chiếu tự động giữa các menu ===== */
+const AK='assy_portal_auto';
+let AS={sec:60,pause:true,full:true,items:{}},AR={on:false,idx:0,left:0,paused:0,timer:null,dur:0};
+try{Object.assign(AS,JSON.parse(localStorage.getItem(AK)||'{}'))}catch(e){}
+const AORDER=['home'].concat(Object.keys(apps));
+const aname=id=>id==='home'?(lang==='vi'?'Tổng quan':'종합 현황'):(lang==='vi'?apps[id].vi:apps[id].kr);
+function aItem(id){const d=AS.items[id]||{};return {on:d.on!==undefined?d.on:(id!=='home'&&!(apps[id]&&apps[id].ext)),sec:d.sec||0}}
+function aSave(){try{localStorage.setItem(AK,JSON.stringify(AS))}catch(e){}}
+function aList(){return AORDER.filter(id=>aItem(id).on)}
+function aDur(id){return Math.max(5,aItem(id).sec||AS.sec)}
+const fmt=s=>s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):s+'s';
+function renderPanel(){
+ $('aChips').innerHTML=[15,30,60,120,300,600].map(v=>`<button class="${AS.sec===v?'on':''}" onclick="AS.sec=${v};aSave();renderPanel()">${v<60?v+' '+T('giây','초'):(v/60)+' '+T('phút','분')}</button>`).join('')+
+  `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3)">${T('Khác','직접')} <input type="number" min="5" max="3600" value="${AS.sec}" style="width:70px;height:30px;border:1px solid var(--line);border-radius:6px;padding:0 6px;text-align:right" onchange="AS.sec=Math.max(5,+this.value||60);aSave();renderPanel()"> ${T('giây','초')}</span>`;
+ $('aPause').checked=!!AS.pause;$('aFull').checked=!!AS.full;
+ $('aList').innerHTML=AORDER.map(id=>{const it=aItem(id),a=apps[id];
+  return `<div class="it"><input type="checkbox" ${it.on?'checked':''} onchange="aSet('${id}','on',this.checked)"><span class="nm"><b>${id==='home'?T('Tổng quan','종합 현황'):T(a.vi,a.kr)}</b><small>${id==='home'?T('Trang tổng quan portal','포털 홈'):(a.ext?T('Dự án riêng','별도 프로젝트'):a.code)}</small></span><input type="number" min="0" max="3600" placeholder="${AS.sec}" value="${it.sec||''}" title="${lang==='vi'?'Để trống = dùng thời gian chung':'비우면 공통 시간'}" onchange="aSet('${id}','sec',Math.max(0,+this.value||0))"><span class="u">${T('giây','초')}</span></div>`}).join('');
+ const L=aList(),tot=L.reduce((s,id)=>s+aDur(id),0);
+ $('aSum').innerHTML=L.length?T(`${L.length} menu · 1 vòng ≈ ${fmt(tot)}`,`${L.length}개 메뉴 · 1회전 ≈ ${fmt(tot)}`):T('Chưa chọn menu nào','선택된 메뉴 없음');
+ $('aGo').className='btnp'+(AR.on?' stop':'');$('aGo').innerHTML=AR.on?T('■ Dừng trình chiếu','■ 순환 중지'):T('▶ Bắt đầu','▶ 시작');
+}
+function aSet(id,k,v){const d=AS.items[id]=Object.assign(aItem(id),AS.items[id]||{});d[k]=v;aSave();renderPanel()}
+$('aPause').addEventListener('change',e=>{AS.pause=e.target.checked;aSave()});
+$('aFull').addEventListener('change',e=>{AS.full=e.target.checked;aSave()});
+function togglePanel(v){const p=$('apanel'),on=v===undefined?!p.classList.contains('show'):v;if(on)renderPanel();p.classList.toggle('show',on)}
+document.addEventListener('mousedown',e=>{if(!e.target.closest('#apanel,#autoBtn'))togglePanel(false)});
+function aShow(id){if(id==='home')goHome();else openApp(id)}
+function aGo(i){const L=aList();if(!L.length){autoStop();return}AR.idx=(i+L.length)%L.length;const id=L[AR.idx];
+ /* nạp trước menu kế tiếp để chuyển mượt */
+ const nx=L[(AR.idx+1)%L.length];if(nx!=='home'&&apps[nx])frameOf(nx);
+ aShow(id);AR.dur=aDur(id);AR.left=AR.dur;aPaint()}
+function aPaint(){const L=aList(),id=L[AR.idx]||'home';
+ $('ahName').textContent=aname(id);$('ahT').textContent=fmt(AR.left);$('autoCd').textContent=AR.on?' '+fmt(AR.left):'';
+ $('ahPs').textContent=AR.paused>Date.now()?(lang==='vi'?'tạm dừng':'일시정지'):(AR.hold?(lang==='vi'?'đã dừng':'정지'):'');
+ $('ahP').textContent=AR.hold?'▶':'⏸';
+ const i=$('abarI');i.style.transform=`scaleX(${AR.dur?AR.left/AR.dur:0})`}
+function aTick(){if(!AR.on)return;
+ if(!AR.hold&&AR.paused<=Date.now()){AR.left--;if(AR.left<=0){aGo(AR.idx+1);return}}
+ aPaint()}
+function autoStart(){const L=aList();if(!L.length){togglePanel(true);return}
+ AR.on=true;AR.hold=false;AR.paused=0;document.body.classList.add('auto');$('autoBtn').classList.add('on');
+ if(AS.full){document.body.classList.add('collapsed');try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
+ const cur=currentApp||'home',i=L.indexOf(cur);aGo(i>=0?i:0);clearInterval(AR.timer);AR.timer=setInterval(aTick,1000);renderPanel()}
+function autoStop(){AR.on=false;clearInterval(AR.timer);document.body.classList.remove('auto');$('autoBtn').classList.remove('on');$('autoCd').textContent='';
+ try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}
+ if(location.search.includes('auto'))history.replaceState(null,'',location.pathname+location.hash);renderPanel()}
+function autoStartStop(){AR.on?autoStop():(autoStart(),togglePanel(false))}
+function autoNext(){if(AR.on)aGo(AR.idx+1)}
+function autoPauseToggle(){AR.hold=!AR.hold;AR.paused=0;aPaint()}
+/* người dùng thao tác → tạm dừng 60 giây (kể cả bấm vào trong ứng dụng) */
+function aUser(){if(AR.on&&AS.pause&&!AR.hold){AR.paused=Date.now()+60000;aPaint()}}
+['mousedown','keydown','wheel','touchstart'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target.closest&&e.target.closest('.ahint,#apanel,#autoBtn'))return;aUser()},true));
+window.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement&&document.activeElement.tagName==='IFRAME')aUser()},0));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&AR.on)autoStop()});
+/* mở link có ?auto (hoặc ?auto=60) → tự chạy, dùng cho TV */
+(function(){const q=new URLSearchParams(location.search);if(q.has('auto')){const v=+q.get('auto');if(v>=5){AS.sec=v;aSave()}setTimeout(autoStart,800)}})();
 
 buildNav();buildHome();setLanguage(lang);tick();setInterval(tick,15000);
 const initial=location.hash.slice(1);if(apps[initial])openApp(initial);else goHome();
