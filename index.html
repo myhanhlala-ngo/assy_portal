@@ -3,200 +3,276 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#14294b">
-<title>ASSY DIGITAL PORTAL</title>
+<meta name="theme-color" content="#0b1f3a">
+<title>ASSY DIGITAL PORTAL · 조립 통합 관리 시스템</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1f3a'/%3E%3Cpath d='M8 23V12l5 3V12l5 3V9h6v14z' fill='%23f39200'/%3E%3C/svg%3E">
 <style>
-:root{--nav:#14294b;--nav2:#1d3d68;--blue:#2864bd;--bg:#f2f5fa;--line:#dce4ef;--text:#172b45;--muted:#718096}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{font-family:Arial,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
-.app-shell{height:100vh;display:flex;flex-direction:column}
-.topbar{height:66px;flex:0 0 66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:14px;z-index:3}
-.brand{display:flex;align-items:center;gap:12px;min-width:0}
-.brand-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#18345c,#2864bd);display:grid;place-items:center;color:#fff;font-size:22px}
-.brand-title{font-weight:800;font-size:17px;letter-spacing:.5px;white-space:nowrap}
-.brand-sub{font-size:11px;color:var(--muted);margin-top:3px}
-.top-actions{display:flex;align-items:center;gap:9px}
-.lang-btn,.top-btn{border:1px solid var(--line);background:#fff;color:#29415f;border-radius:8px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:700}
-.top-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-.workspace{display:flex;min-height:0;flex:1}
-.sidebar{width:252px;flex:0 0 252px;background:var(--nav);color:#fff;display:flex;flex-direction:column;overflow:auto}
-.side-head{padding:20px 17px 15px;border-bottom:1px solid #ffffff1c}
-.side-head strong{font-size:15px;letter-spacing:.7px}
-.side-head small{display:block;color:#b9cce6;font-size:11px;margin-top:5px;line-height:1.5}
-.nav-label{padding:17px 17px 7px;color:#91add0;font-size:10px;font-weight:800;letter-spacing:1px}
-.nav-item{width:calc(100% - 18px);margin:2px 9px;border:0;background:transparent;color:#dce8f7;text-align:left;border-radius:8px;padding:11px 10px;display:flex;align-items:center;gap:11px;cursor:pointer;font-size:12px;font-weight:600}
-.nav-item:hover{background:#ffffff14}
-.nav-item.active{background:#2d65bd;color:#fff;box-shadow:0 4px 12px #071b3680}
-.nav-icon{width:21px;text-align:center;font-size:16px;flex:0 0 21px}
-.side-foot{margin-top:auto;padding:13px 16px;border-top:1px solid #ffffff1c;color:#9fb5d2;font-size:10px;line-height:1.6}
-.content{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
-.content-head{min-height:66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:12px 22px;gap:14px}
-.page-title{font-size:18px;font-weight:800}
-.page-desc{font-size:11px;color:var(--muted);margin-top:5px}
-.frame-actions{display:flex;gap:8px;align-items:center}
-.frame-actions button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:8px 10px;color:#34506f;font-size:11px;cursor:pointer}
-.view-area{position:relative;flex:1;min-height:0;overflow:auto}
-#appFrame{display:none;width:100%;height:100%;border:0;background:#fff}
-#appFrame.visible{display:block}
-.overview{padding:22px;max-width:1500px;margin:0 auto}
-.welcome{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
-.welcome h2{font-size:21px;margin:0 0 7px}
-.welcome p{margin:0;color:var(--muted);font-size:12px}
-.overview-note{background:#e7f0ff;color:#315782;border:1px solid #d3e3fa;border-radius:9px;padding:10px 13px;font-size:11px;line-height:1.5;max-width:390px}
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.app-card{background:#fff;border:1px solid var(--line);border-radius:11px;padding:17px;text-align:left;cursor:pointer;min-height:132px;display:flex;flex-direction:column;box-shadow:0 2px 7px #18345c08;transition:.15s;color:var(--text)}
-.app-card:hover{transform:translateY(-2px);border-color:#8eb1df;box-shadow:0 7px 18px #18345c12}
-.card-icon{width:36px;height:36px;border-radius:9px;background:#eaf2ff;display:grid;place-items:center;font-size:19px;margin-bottom:12px}
-.app-card strong{font-size:13px;margin-bottom:6px}
-.app-card span.desc{font-size:11px;color:var(--muted);line-height:1.45}
-.app-card .launch{margin-top:auto;padding-top:12px;color:var(--blue);font-size:10px;font-weight:800}
-.loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#f2f5fa;color:#526984;font-size:13px;z-index:1}
-.loading.show{display:flex}
-.mobile-menu{display:none}
-@media(max-width:1050px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:760px){
- body{overflow:auto}.app-shell{min-height:100vh;height:100vh}
- .topbar{height:58px;flex-basis:58px;padding:0 12px}
- .brand-mark{width:34px;height:34px}.brand-title{font-size:13px}.brand-sub{display:none}
- .mobile-menu{display:inline-flex}.sidebar{position:absolute;top:58px;bottom:0;left:0;width:260px;z-index:5;transform:translateX(-102%);transition:transform .2s;box-shadow:8px 0 24px #071b3630}
- .sidebar.open{transform:translateX(0)}
- .content-head{padding:10px 13px;min-height:58px}.page-title{font-size:15px}
- .overview{padding:14px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
- .overview-note{max-width:none}.top-actions{gap:5px}.lang-btn,.top-btn{padding:8px;font-size:10px}
+:root{
+  --navy:#0b1f3a;--navy-2:#11294b;--navy-3:#183660;--line-d:rgba(255,255,255,.08);
+  --brand:#f39200;--brand-d:#d97e00;--ink:#0f1b2d;--ink-2:#475569;--ink-3:#8492a6;
+  --bg:#eef2f7;--card:#fff;--line:#e2e8f0;--blue:#1d4ed8;
+  --g-prod:#1d4ed8;--g-prod-bg:#e8efff;--g-hr:#0f766e;--g-hr-bg:#e3f5f2;--g-qa:#b45309;--g-qa-bg:#fdf1e2;
+  --side-w:252px;--side-c:68px;--top-h:56px;
+  font-family:"Segoe UI","Pretendard","Malgun Gothic","Noto Sans KR",system-ui,-apple-system,sans-serif;
 }
-@media(max-width:430px){.cards{grid-template-columns:1fr 1fr;gap:9px}.app-card{padding:12px;min-height:140px}.brand-title{font-size:11px}.top-btn{display:none}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+.ico{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- top bar ---------- */
+.top{position:fixed;inset:0 0 auto 0;height:var(--top-h);background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 16px 0 12px;z-index:50}
+.top .burger{width:38px;height:38px;border:0;background:transparent;border-radius:8px;display:grid;place-items:center;color:var(--ink-2)}
+.top .burger:hover{background:#f1f5f9}
+.logo{display:inline-flex;align-items:center;padding:5px 10px;border:1px solid #f0d9bf;border-left:4px solid var(--brand);border-radius:0 6px 6px 0;background:#fff}
+.logo img{height:22px;width:auto;display:block}
+.ptitle{display:flex;flex-direction:column;line-height:1.15;padding-left:14px;border-left:1px solid var(--line);min-width:0}
+.ptitle b{font-size:15px;letter-spacing:.06em;color:var(--navy);white-space:nowrap}
+.ptitle small{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.crumb{display:flex;align-items:center;gap:8px;margin-left:10px;padding-left:16px;border-left:1px solid var(--line);font-size:14px;color:var(--ink-3);min-width:0}
+.crumb .cur{color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb .cur small{font-weight:400;color:var(--ink-3);margin-left:6px}
+.crumb a{color:var(--ink-3);text-decoration:none;cursor:pointer}.crumb a:hover{color:var(--blue)}
+.sp{flex:1}
+.clock{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.clock .t{font-size:15px;font-weight:600;color:var(--navy)}
+.shift{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:#fff6e8;color:#9a5a00;border:1px solid #f6d8a8}
+.shift.night{background:#eef1ff;color:#3730a3;border-color:#c7cdfa}
+.shift i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f8fafc}
+.seg button{border:0;background:transparent;padding:6px 11px;font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.seg button.on{background:var(--navy);color:#fff}
+.tbtn{height:34px;display:inline-flex;align-items:center;gap:6px;padding:0 11px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.tbtn:hover{border-color:#cbd5e1;background:#f8fafc;color:var(--ink)}
+.tbtn .ico{width:17px;height:17px}
+.appact{display:none;gap:6px}.appact.show{display:flex}
+
+/* ---------- sidebar ---------- */
+.side{position:fixed;top:var(--top-h);bottom:0;left:0;width:var(--side-w);background:var(--navy);color:#cbd6e6;display:flex;flex-direction:column;z-index:40;transition:width .18s ease}
+.side .scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 10px}
+.side .scroll::-webkit-scrollbar{width:6px}.side .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.grp{margin:14px 10px 6px;font-size:10.5px;font-weight:700;letter-spacing:.14em;color:#7f93b2;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.grp em{font-style:normal;font-weight:500;letter-spacing:.02em;color:#5f7697}
+.nav{position:relative;width:100%;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#cbd6e6;border-radius:8px;padding:9px 12px;margin:1px 0;text-align:left;white-space:nowrap}
+.nav:hover{background:var(--navy-2);color:#fff}
+.nav.on{background:var(--navy-3);color:#fff}
+.nav.on::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
+.nav .lbl{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.nav .lbl b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.nav .lbl small{font-size:11px;color:#7f93b2}
+.nav.on .lbl small{color:#a9bbd6}
+.nav .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);flex:none}
+.nav .ext{margin-left:auto;width:14px;height:14px;opacity:.5}
+.side .foot{border-top:1px solid var(--line-d);padding:12px 18px;font-size:11px;color:#6d84a6;line-height:1.5;white-space:nowrap;overflow:hidden}
+.side .foot b{color:#a9bbd6;font-weight:600}
+body.collapsed .side{width:var(--side-c)}
+body.collapsed .side .lbl,body.collapsed .grp em,body.collapsed .nav .dot,body.collapsed .nav .ext,body.collapsed .side .foot span{display:none}
+body.collapsed .grp{justify-content:center;margin:12px 0 4px;font-size:0}
+body.collapsed .grp::after{content:"";display:block;width:22px;height:1px;background:var(--line-d)}
+body.collapsed .nav{justify-content:center;padding:10px 0}
+.tip{position:fixed;z-index:80;background:var(--navy);color:#fff;font-size:12.5px;padding:6px 10px;border-radius:6px;pointer-events:none;white-space:nowrap;box-shadow:0 6px 18px rgba(2,8,23,.25);display:none}
+
+/* ---------- main ---------- */
+.main{position:fixed;top:var(--top-h);right:0;bottom:0;left:var(--side-w);transition:left .18s ease}
+body.collapsed .main{left:var(--side-c)}
+#appFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
+#appFrame.show{display:block}
+.bar{position:absolute;left:0;top:0;height:3px;width:0;background:var(--brand);z-index:5;transition:width .5s ease,opacity .3s}
+.bar.run{width:75%}.bar.done{width:100%;opacity:0}
+
+/* ---------- overview ---------- */
+#home{position:absolute;inset:0;overflow:auto;padding:26px 30px 40px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.hero h1{margin:0;font-size:26px;font-weight:700;letter-spacing:.01em;color:var(--navy)}
+.hero h1 .eb{display:block;font-size:12.5px;font-weight:600;color:var(--brand-d);letter-spacing:.14em;margin-bottom:8px}
+.hero p{margin:6px 0 0;color:var(--ink-2);font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:130px}
+.stat small{display:block;font-size:11.5px;color:var(--ink-3);letter-spacing:.04em}
+.stat b{font-size:20px;color:var(--navy);font-variant-numeric:tabular-nums}
+.section{margin-top:22px}
+.sh{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.sh .tag{width:4px;height:18px;border-radius:2px}
+.sh b{font-size:15px;color:var(--ink)}
+.sh small{font-size:12.5px;color:var(--ink-3)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{position:relative;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s,box-shadow .15s,transform .15s}
+.card:hover{border-color:#c7d2e3;box-shadow:0 8px 24px rgba(15,27,45,.08);transform:translateY(-2px)}
+.card .hd{display:flex;align-items:center;gap:12px}
+.card .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:none}
+.card .ic .ico{width:21px;height:21px}
+.card .nm{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.card .nm b{font-size:15px;color:var(--ink)}
+.card .nm small{font-size:12px;color:var(--ink-3)}
+.card .code{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ink-3);font-family:Consolas,"Cascadia Mono",monospace}
+.card p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5;min-height:39px}
+.card .ft{display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line);padding-top:10px;font-size:12px}
+.card .st{display:inline-flex;align-items:center;gap:6px;color:#15803d;font-weight:600}
+.card .st i{width:7px;height:7px;border-radius:50%;background:#22c55e}
+.card .st.ext{color:var(--ink-3)}.card .st.ext i{background:#94a3b8}
+.card .go{color:var(--blue);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.g-prod .ic{background:var(--g-prod-bg);color:var(--g-prod)}.g-prod .tag{background:var(--g-prod)}
+.g-hr .ic{background:var(--g-hr-bg);color:var(--g-hr)}.g-hr .tag{background:var(--g-hr)}
+.g-qa .ic{background:var(--g-qa-bg);color:var(--g-qa)}.g-qa .tag{background:var(--g-qa)}
+.note{margin-top:26px;display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:0 10px 10px 0;padding:12px 16px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.note b{color:var(--ink)}
+
+[data-lang=kr] .vi{display:none}[data-lang=vi] .kr{display:none}
+
+@media (max-width:1100px){.clock .d,.ptitle small{display:none}}
+@media (max-width:860px){
+  .ptitle,.clock,.crumb{display:none}
+  .logo img{height:18px}
+  .side{transform:translateX(-100%);transition:transform .2s;width:var(--side-w)!important}
+  body.mopen .side{transform:none}
+  body.collapsed .side .lbl{display:flex}
+  .main,body.collapsed .main{left:0}
+  #home{padding:18px 16px 30px}
+}
+@media print{.top,.side{display:none}.main{position:static}}
 </style>
 </head>
-<body>
-<div class="app-shell">
-  <header class="topbar">
-    <div class="brand">
-      <button class="top-btn mobile-menu" id="menuToggle" aria-label="Mở menu">☰</button>
-      <div class="brand-mark">🏭</div>
-      <div>
-        <div class="brand-title">ASSY DIGITAL PORTAL</div>
-        <div class="brand-sub" data-vi="Hệ thống quản lý bộ phận Lắp ráp" data-kr="조립팀 통합 관리 시스템">Hệ thống quản lý bộ phận Lắp ráp</div>
-      </div>
-    </div>
-    <div class="top-actions">
-      <button class="lang-btn" id="langBtn" onclick="toggleLang()">🇻🇳 VI / 🇰🇷 KR</button>
-      <button class="top-btn" onclick="goHome()" data-vi="⌂ Tổng quan" data-kr="⌂ 종합 현황">⌂ Tổng quan</button>
-    </div>
-  </header>
+<body data-lang="vi">
 
-  <div class="workspace">
-    <aside class="sidebar" id="sidebar">
-      <div class="side-head">
-        <strong>ASSY · DIGITAL WORKSPACE</strong>
-        <small data-vi="Trung tâm ứng dụng và báo cáo bộ phận Lắp ráp" data-kr="조립팀 애플리케이션 및 보고 통합 포털">Trung tâm ứng dụng và báo cáo bộ phận Lắp ráp</small>
-      </div>
-      <div class="nav-label" data-vi="ĐIỀU HƯỚNG" data-kr="메뉴">ĐIỀU HƯỚNG</div>
-      <button class="nav-item active" data-app="home" onclick="goHome()"><span class="nav-icon">▦</span><span data-vi="Tổng quan" data-kr="종합 현황">Tổng quan</span></button>
-      <div class="nav-label" data-vi="ỨNG DỤNG ASSY" data-kr="조립팀 시스템">ỨNG DỤNG ASSY</div>
-      <nav id="appNav">
-        <button class="nav-item" data-app="daily-manpower" onclick="openApp('daily-manpower')"><span class="nav-icon">👥</span><span data-vi="Báo cáo nhân lực" data-kr="일일 인원 현황표">Báo cáo nhân lực</span></button>
-        <button class="nav-item" data-app="daily-work-report" onclick="openWorkReport()"><span class="nav-icon">📝</span><span data-vi="Báo cáo công việc hằng ngày" data-kr="일일 업무 보고">Báo cáo công việc hằng ngày</span></button>
-        <button class="nav-item" data-app="daily-plan-defect" onclick="openApp('daily-plan-defect')"><span class="nav-icon">📅</span><span data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</span></button>
-        <button class="nav-item" data-app="loss-cost" onclick="openApp('loss-cost')"><span class="nav-icon">💰</span><span data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</span></button>
-        <button class="nav-item" data-app="material-ng-loss" onclick="openApp('material-ng-loss')"><span class="nav-icon">📦</span><span data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</span></button>
-        <button class="nav-item" data-app="mqis" onclick="openApp('mqis')"><span class="nav-icon">📈</span><span>MQIS</span></button>
-        <button class="nav-item" data-app="production-ops-plan" onclick="openApp('production-ops-plan')"><span class="nav-icon">🏭</span><span data-vi="Kế hoạch vận hành" data-kr="생산 운영 계획">Kế hoạch vận hành</span></button>
-        <button class="nav-item" data-app="quality" onclick="openApp('quality')"><span class="nav-icon">🛡️</span><span data-vi="Quản lý chất lượng" data-kr="품질 관리">Quản lý chất lượng</span></button>
-        <button class="nav-item" data-app="revenue-manpower" onclick="openApp('revenue-manpower')"><span class="nav-icon">📊</span><span data-vi="Doanh thu / Nhân lực" data-kr="매출 / 인원">Doanh thu / Nhân lực</span></button>
-      </nav>
-      <div class="side-foot">ASSY DIGITAL PORTAL<br>Cloudflare Pages · Internal Workspace</div>
-    </aside>
-
-    <main class="content">
-      <div class="content-head">
-        <div>
-          <div class="page-title" id="pageTitle" data-vi="Tổng quan ASSY" data-kr="조립팀 종합 현황">Tổng quan ASSY</div>
-          <div class="page-desc" id="pageDesc" data-vi="Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình." data-kr="왼쪽 메뉴에서 시스템을 선택하여 한 화면에서 사용하세요.">Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình.</div>
-        </div>
-        <div class="frame-actions" id="frameActions" style="display:none">
-          <button onclick="reloadApp()" data-vi="↻ Tải lại" data-kr="↻ 새로고침">↻ Tải lại</button>
-          <button onclick="openExternal()" data-vi="↗ Mở tab riêng" data-kr="↗ 새 탭에서 열기">↗ Mở tab riêng</button>
-        </div>
-      </div>
-
-      <section class="view-area">
-        <div class="overview" id="overview">
-          <div class="welcome">
-            <div>
-              <h2 data-vi="TRUNG TÂM QUẢN LÝ BỘ PHẬN LẮP RÁP" data-kr="조립팀 통합 관리 센터">TRUNG TÂM QUẢN LÝ BỘ PHẬN LẮP RÁP</h2>
-              <p data-vi="Truy cập nhanh các hệ thống báo cáo, sản xuất, nhân lực và chất lượng." data-kr="보고, 생산, 인원 및 품질 시스템에 빠르게 접속하세요.">Truy cập nhanh các hệ thống báo cáo, sản xuất, nhân lực và chất lượng.</p>
-            </div>
-            <div class="overview-note" data-vi="Chọn một ứng dụng ở menu bên trái hoặc các thẻ bên dưới. Ứng dụng sẽ hiển thị ngay tại khu vực này, không mở thêm tab trình duyệt." data-kr="왼쪽 메뉴 또는 아래 카드를 선택하세요. 시스템은 새 브라우저 탭을 열지 않고 이 영역에 표시됩니다.">Chọn một ứng dụng ở menu bên trái hoặc các thẻ bên dưới. Ứng dụng sẽ hiển thị ngay tại khu vực này, không mở thêm tab trình duyệt.</div>
-          </div>
-          <div class="cards">
-            <button class="app-card" onclick="openApp('daily-manpower')"><span class="card-icon">👥</span><strong data-vi="Báo cáo nhân lực hằng ngày" data-kr="일일 인원 현황표">Báo cáo nhân lực hằng ngày</strong><span class="desc" data-vi="Theo dõi nhân lực, ca ngày và ca đêm." data-kr="일일 인원 및 주간·야간 근무 관리">Theo dõi nhân lực, ca ngày và ca đêm.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openWorkReport()"><span class="card-icon">📝</span><strong data-vi="Báo cáo công việc hằng ngày" data-kr="일일 업무 보고">Báo cáo công việc hằng ngày</strong><span class="desc" data-vi="Nhập và xem báo cáo công việc hằng ngày." data-kr="일일 업무 보고 작성 및 조회">Nhập và xem báo cáo công việc hằng ngày.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('daily-plan-defect')"><span class="card-icon">📅</span><strong data-vi="Kế hoạch & lỗi" data-kr="생산 계획 및 불량">Kế hoạch & lỗi</strong><span class="desc" data-vi="Theo dõi kế hoạch sản xuất và tình hình lỗi." data-kr="생산 계획 및 불량 현황 관리">Theo dõi kế hoạch sản xuất và tình hình lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('loss-cost')"><span class="card-icon">💰</span><strong data-vi="Chi phí lỗi" data-kr="실패 비용">Chi phí lỗi</strong><span class="desc" data-vi="Theo dõi tổn thất, RMA và chi phí lỗi." data-kr="손실 및 RMA 비용 관리">Theo dõi tổn thất, RMA và chi phí lỗi.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('material-ng-loss')"><span class="card-icon">📦</span><strong data-vi="Tổn thất vật tư NG" data-kr="불량 자재 손실">Tổn thất vật tư NG</strong><span class="desc" data-vi="Quản lý vật tư NG, tái chế và tiêu hao." data-kr="불량 자재, 재활용 및 소모 관리">Quản lý vật tư NG, tái chế và tiêu hao.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('mqis')"><span class="card-icon">📈</span><strong>MQIS</strong><span class="desc" data-vi="Theo dõi và phân tích chỉ số chất lượng." data-kr="품질 지표 모니터링 및 분석">Theo dõi và phân tích chỉ số chất lượng.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('production-ops-plan')"><span class="card-icon">🏭</span><strong data-vi="Kế hoạch vận hành" data-kr="생산 운영 계획">Kế hoạch vận hành</strong><span class="desc" data-vi="Quản lý kế hoạch và hoạt động vận hành." data-kr="생산 운영 계획 및 관리">Quản lý kế hoạch và hoạt động vận hành.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('quality')"><span class="card-icon">🛡️</span><strong data-vi="Quản lý chất lượng" data-kr="품질 관리">Quản lý chất lượng</strong><span class="desc" data-vi="Theo dõi NG, DPMO, Sigma và Yield." data-kr="불량, DPMO, Sigma 및 수율 관리">Theo dõi NG, DPMO, Sigma và Yield.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-            <button class="app-card" onclick="openApp('revenue-manpower')"><span class="card-icon">📊</span><strong data-vi="Doanh thu / Nhân lực" data-kr="매출 / 인원">Doanh thu / Nhân lực</strong><span class="desc" data-vi="Phân tích doanh thu và hiệu suất nhân lực." data-kr="매출 및 인원 생산성 분석">Phân tích doanh thu và hiệu suất nhân lực.</span><span class="launch" data-vi="MỞ ỨNG DỤNG →" data-kr="시스템 열기 →">MỞ ỨNG DỤNG →</span></button>
-          </div>
-        </div>
-        <div class="loading" id="loading">Đang tải ứng dụng...</div>
-        <iframe id="appFrame" title="ASSY application" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-      </section>
-    </main>
+<header class="top">
+  <button class="burger" id="burger" aria-label="Thu gọn / mở menu"><svg class="ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <span class="logo"><img src="data:image/png;base64,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" alt="INTOPS"></span>
+  <div class="ptitle"><b>ASSY DIGITAL PORTAL</b><small><span class="vi">Hệ thống quản lý bộ phận Lắp ráp</span><span class="kr">조립팀 통합 관리 시스템</span></small></div>
+  <nav class="crumb" id="crumb"></nav>
+  <div class="sp"></div>
+  <div class="clock" id="clock"></div>
+  <div class="appact" id="appAct">
+    <button class="tbtn" onclick="reloadApp()" title="Tải lại ứng dụng"><svg class="ico" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span class="vi">Tải lại</span><span class="kr">새로고침</span></button>
+    <button class="tbtn" onclick="openExternal()" title="Mở ứng dụng trong tab riêng"><svg class="ico" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span class="vi">Tab riêng</span><span class="kr">새 탭</span></button>
   </div>
-</div>
+  <div class="seg" role="group" aria-label="Ngôn ngữ"><button data-l="vi" onclick="setLanguage('vi')">VI</button><button data-l="kr" onclick="setLanguage('kr')">KR</button></div>
+</header>
+
+<aside class="side" id="side">
+  <div class="scroll" id="nav"></div>
+  <div class="foot"><b>ASSY DIGITAL PORTAL</b><span><br>Cloudflare Pages · D1 · v2026.11</span></div>
+</aside>
+<div class="tip" id="tip"></div>
+
+<main class="main" id="main">
+  <div class="bar" id="bar"></div>
+  <section id="home"></section>
+  <iframe id="appFrame" title="ASSY application" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+</main>
+
 <script>
-const apps={
- 'daily-work-report':{vi:'Báo cáo công việc hằng ngày',kr:'일일 업무 보고',url:'https://baocaocongviechangngay.pages.dev/'},
- 'daily-manpower':{vi:'Báo cáo nhân lực hằng ngày',kr:'일일 인원 현황표',url:'/daily-manpower/'},
- 'daily-plan-defect':{vi:'Kế hoạch & lỗi',kr:'생산 계획 및 불량',url:'/daily-plan-defect/'},
- 'loss-cost':{vi:'Chi phí lỗi',kr:'실패 비용',url:'/loss-cost/'},
- 'material-ng-loss':{vi:'Tổn thất vật tư NG',kr:'불량 자재 손실',url:'/material-ng-loss/'},
- 'mqis':{vi:'MQIS',kr:'MQIS',url:'/mqis/'},
- 'production-ops-plan':{vi:'Kế hoạch vận hành',kr:'생산 운영 계획',url:'/production-ops-plan/'},
- 'quality':{vi:'Quản lý chất lượng',kr:'품질 관리',url:'/quality/'},
- 'revenue-manpower':{vi:'Doanh thu / Nhân lực',kr:'매출 / 인원',url:'/revenue-manpower/'}
+const I={
+ home:'<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
+ users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.3a3 3 0 0 1 0 5.6M18 14.5a5 5 0 0 1 2.5 4.5"/>',
+ report:'<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
+ calendar:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M8.5 14l2 2 4-4"/>',
+ coin:'<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
+ box:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9M8 5.3l8 4.5"/>',
+ chart:'<path d="M4 20h16M6 16l4-5 3 3 5-7"/><circle cx="18" cy="7" r="1.4"/>',
+ factory:'<path d="M3 20V10l5 3V10l5 3V6h4l1 6h3v8z"/><path d="M7 17h2M12 17h2M17 17h1"/>',
+ shield:'<path d="M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+ bars:'<path d="M5 20V12M10 20V6M15 20v-9M20 20V4M3 20h18"/>',
+ ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
 };
-let currentApp=null, lang='vi';
-const frame=document.getElementById('appFrame');
+const svg=(k,c)=>`<svg class="ico${c?' '+c:''}" viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
+
+const GROUPS=[
+ {id:'prod',cls:'g-prod',vi:'SẢN XUẤT',kr:'생산',dvi:'Kế hoạch, vận hành và tổn thất',dkr:'생산 계획 · 운영 · 손실'},
+ {id:'hr',cls:'g-hr',vi:'NHÂN LỰC',kr:'인원',dvi:'Nhân lực, công việc và hiệu suất',dkr:'인원 · 업무 · 생산성'},
+ {id:'qa',cls:'g-qa',vi:'CHẤT LƯỢNG',kr:'품질',dvi:'Chất lượng, chi phí lỗi và khách hàng',dkr:'품질 · 실패비용 · 고객 불량'}
+];
+const apps={
+ 'daily-plan-defect':{g:'prod',code:'PRD-01',icon:'calendar',vi:'Kế hoạch & lỗi',kr:'생산 계획 및 불량',url:'/daily-plan-defect/',dvi:'Kế hoạch hằng ngày và tỷ lệ NG theo nhóm SP / công đoạn.',dkr:'일일 생산계획 및 제품군·공정별 불량율'},
+ 'production-ops-plan':{g:'prod',code:'PRD-02',icon:'factory',vi:'Kế hoạch vận hành',kr:'생산 운영 계획',url:'/production-ops-plan/',dvi:'Kế hoạch vận hành sản xuất và nhu cầu nhân lực theo ngày.',dkr:'일일 생산 운영 계획 및 인력 소요'},
+ 'material-ng-loss':{g:'prod',code:'PRD-03',icon:'box',vi:'Tổn thất vật tư NG',kr:'자재 불량 손실',url:'/material-ng-loss/',dvi:'Theo dõi Loss Auto / RW / đầu vào theo model và vật tư.',dkr:'모델·자재별 자동/RW/입고 불량 손실'},
+ 'daily-manpower':{g:'hr',code:'HR-01',icon:'users',vi:'Báo cáo nhân lực',kr:'일일 인원 현황표',url:'/daily-manpower/',dvi:'Nhân lực theo ngày, ca ngày / ca đêm, phân bổ bộ phận.',dkr:'일별 인원 · 주간/야간 · 부문별 구성'},
+ 'daily-work-report':{g:'hr',code:'HR-02',icon:'report',vi:'Công việc hằng ngày',kr:'일일 업무 보고',url:'https://baocaocongviechangngay.pages.dev/',ext:1,dvi:'Nhập và xem báo cáo công việc hằng ngày của bộ phận.',dkr:'부서 일일 업무 보고 작성 및 조회'},
+ 'revenue-manpower':{g:'hr',code:'HR-03',icon:'bars',vi:'Doanh thu / Nhân lực',kr:'생산금액 및 인력',url:'/revenue-manpower/',dvi:'Doanh thu sản xuất và hiệu suất nhân lực theo ngày, tháng.',dkr:'생산금액 및 인원 생산성 분석'},
+ 'quality':{g:'qa',code:'QA-01',icon:'shield',vi:'Quản lý chất lượng',kr:'품질 관리',url:'/quality/',dvi:'NG, DPMO, Sigma, Yield và chi phí thất bại.',dkr:'불량 · DPMO · Sigma · 수율 · 실패비용'},
+ 'loss-cost':{g:'qa',code:'QA-02',icon:'coin',vi:'Chi phí lỗi',kr:'생산 손실비용',url:'/loss-cost/',dvi:'Chi phí loss hằng ngày, nguyên nhân và đối sách.',dkr:'일일 손실비용 · 원인 및 대책'},
+ 'mqis':{g:'qa',code:'QA-03',icon:'chart',vi:'MQIS',kr:'고객 불량 (MQIS)',url:'/mqis/',dvi:'Lỗi phát sinh tại khách hàng, trạng thái xử lý và ảnh lỗi.',dkr:'고객사 발생 불량 · 처리 현황'}
+};
+let currentApp=null,lang='vi';
+const $=id=>document.getElementById(id),frame=$('appFrame');
+const T=(vi,kr)=>`<span class="vi">${vi}</span><span class="kr">${kr}</span>`;
+try{lang=localStorage.getItem('assy_portal_lang')||'vi';if(localStorage.getItem('assy_portal_side')==='c')document.body.classList.add('collapsed')}catch(e){}
+
+function buildNav(){
+ let h=`<button class="nav" data-app="home" onclick="goHome()">${svg('home')}<span class="lbl"><b>${T('Tổng quan','종합 현황')}</b><small>${T('Trang chủ portal','포털 홈')}</small></span></button>`;
+ GROUPS.forEach(g=>{
+  h+=`<div class="grp">${T(g.vi,g.kr)}<em>${g.id==='prod'?'PRODUCTION':g.id==='hr'?'MANPOWER':'QUALITY'}</em></div>`;
+  Object.entries(apps).filter(([,a])=>a.g===g.id).forEach(([id,a])=>{
+   h+=`<button class="nav" data-app="${id}" data-tip="${a.vi} · ${a.kr}" onclick="openApp('${id}')">${svg(a.icon)}<span class="lbl"><b>${T(a.vi,a.kr)}</b><small>${T(a.kr,a.vi)}</small></span>${a.ext?svg('ext','ext'):'<span class="dot" title="Đồng bộ dữ liệu chung"></span>'}</button>`;
+  });
+ });
+ $('nav').innerHTML=h;
+ $('nav').querySelector('[data-app=home]').dataset.tip='Tổng quan · 종합 현황';
+}
+function buildHome(){
+ const n=Object.keys(apps).length;
+ let h=`<div class="hero"><div><h1><span class="eb">ASSEMBLY DEPARTMENT · INTOPS VINA</span>${T('Trung tâm quản lý bộ phận Lắp ráp','조립팀 통합 관리 센터')}</h1>
+ <p>${T('Truy cập nhanh các hệ thống sản xuất, nhân lực và chất lượng – dữ liệu dùng chung, cập nhật tức thời giữa các máy.','생산 · 인원 · 품질 시스템을 한 곳에서 – 모든 PC에서 실시간으로 공유되는 데이터.')}</p></div>
+ <div class="stats"><div class="stat"><small>${T('ỨNG DỤNG','시스템')}</small><b>${n}</b></div><div class="stat"><small>${T('NHÓM','분류')}</small><b>3</b></div><div class="stat"><small>${T('DỮ LIỆU','데이터')}</small><b style="font-size:15px;color:#15803d">● ${T('Đồng bộ','실시간 동기화')}</b></div></div></div>`;
+ GROUPS.forEach(g=>{
+  h+=`<div class="section ${g.cls}"><div class="sh"><span class="tag"></span><b>${T(g.vi,g.kr)}</b><small>${T(g.dvi,g.dkr)}</small></div><div class="cards">`;
+  Object.entries(apps).filter(([,a])=>a.g===g.id).forEach(([id,a])=>{
+   h+=`<button class="card ${g.cls}" onclick="openApp('${id}')"><span class="code">${a.code}</span><div class="hd"><span class="ic">${svg(a.icon)}</span><span class="nm"><b>${T(a.vi,a.kr)}</b><small>${T(a.kr,a.vi)}</small></span></div>
+   <p>${T(a.dvi,a.dkr)}</p><div class="ft">${a.ext?`<span class="st ext"><i></i>${T('Dự án riêng','별도 프로젝트')}</span>`:`<span class="st"><i></i>${T('Dữ liệu chung','공유 데이터')}</span>`}<span class="go">${T('Mở ứng dụng','열기')} ${svg('arrow')}</span></div></button>`;
+  });
+  h+='</div></div>';
+ });
+ h+=`<div class="note">${svg('shield')}<div>${T('<b>Xem</b> không cần đăng nhập. <b>Sửa</b> cần mật khẩu sửa của ASSY Portal – đăng nhập 1 lần dùng cho mọi ứng dụng. Huy hiệu <b>☁ Đã đồng bộ</b> trong mỗi ứng dụng cho biết dữ liệu đã lưu lên máy chủ.','<b>조회</b>는 로그인 없이 가능합니다. <b>수정</b>은 ASSY 포털 수정 비밀번호가 필요하며, 한 번 로그인하면 모든 시스템에 적용됩니다. 각 시스템의 <b>☁ 동기화됨</b> 표시는 서버 저장 완료를 의미합니다.')}</div></div>`;
+ $('home').innerHTML=h;
+ $('home').querySelectorAll('.card .go .ico').forEach(e=>{e.style.width='15px';e.style.height='15px'});
+}
+function setCrumb(){
+ const a=currentApp&&apps[currentApp];
+ $('crumb').innerHTML=a?`<a onclick="goHome()">${T('Tổng quan','종합 현황')}</a><span>›</span><span class="cur">${lang==='vi'?a.vi:a.kr}<small>${lang==='vi'?a.kr:a.vi}</small></span>`
+  :`<span class="cur">${T('Tổng quan','종합 현황')}</span>`;
+}
 function setLanguage(next){
- lang=next;document.documentElement.lang=lang;
- document.querySelectorAll('[data-vi][data-kr]').forEach(el=>{el.textContent=el.dataset[lang]});
- document.getElementById('langBtn').textContent=lang==='vi'?'🇻🇳 VI / 🇰🇷 KR':'🇰🇷 KR / 🇻🇳 VI';
- document.getElementById('loading').textContent=lang==='vi'?'Đang tải ứng dụng...':'시스템을 불러오는 중...';
- if(currentApp){document.getElementById('pageTitle').textContent=apps[currentApp][lang]}
+ lang=next==='kr'?'kr':'vi';document.body.dataset.lang=lang;document.documentElement.lang=lang==='vi'?'vi':'ko';
+ document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
+ try{localStorage.setItem('assy_portal_lang',lang)}catch(e){}
+ setCrumb();tick();
 }
 function toggleLang(){setLanguage(lang==='vi'?'kr':'vi')}
-function openWorkReport(){openApp('daily-work-report')}
-function markActive(id){document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.app===id))}
+function markActive(id){document.querySelectorAll('.nav').forEach(el=>el.classList.toggle('on',el.dataset.app===id))}
 function goHome(){
- currentApp=null;frame.classList.remove('visible');frame.removeAttribute('src');
- document.getElementById('overview').style.display='block';
- document.getElementById('frameActions').style.display='none';
- document.getElementById('pageTitle').textContent=lang==='vi'?'Tổng quan ASSY':'조립팀 종합 현황';
- document.getElementById('pageDesc').textContent=lang==='vi'?'Chọn ứng dụng ở menu bên trái để làm việc trong cùng một màn hình.':'왼쪽 메뉴에서 시스템을 선택하여 한 화면에서 사용하세요.';
- markActive('home');history.replaceState(null,'',location.pathname);document.getElementById('sidebar').classList.remove('open');
+ currentApp=null;frame.classList.remove('show');frame.removeAttribute('src');delete frame.dataset.app;
+ $('home').style.display='block';$('appAct').classList.remove('show');
+ markActive('home');setCrumb();history.replaceState(null,'',location.pathname);document.body.classList.remove('mopen');
 }
+function openWorkReport(){openApp('daily-work-report')}
 function openApp(id){
  if(!apps[id])return;
- currentApp=id;markActive(id);
- document.getElementById('overview').style.display='none';
- document.getElementById('frameActions').style.display='flex';
- document.getElementById('pageTitle').textContent=apps[id][lang];
- document.getElementById('pageDesc').textContent=lang==='vi'?'Ứng dụng đang chạy trong cổng ASSY.':'ASSY 포털 내부에서 시스템이 실행 중입니다.';
- document.getElementById('loading').classList.add('show');
- frame.classList.add('visible');
- if(frame.dataset.app!==id){frame.dataset.app=id;frame.src=apps[id].url}
- history.replaceState(null,'',location.pathname+'#'+id);
- document.getElementById('sidebar').classList.remove('open');
+ currentApp=id;markActive(id);setCrumb();
+ $('home').style.display='none';$('appAct').classList.add('show');frame.classList.add('show');
+ if(frame.dataset.app!==id){frame.dataset.app=id;startBar();frame.src=apps[id].url}
+ history.replaceState(null,'',location.pathname+'#'+id);document.body.classList.remove('mopen');
 }
-frame.addEventListener('load',()=>document.getElementById('loading').classList.remove('show'));
-function reloadApp(){if(currentApp){document.getElementById('loading').classList.add('show');frame.contentWindow.location.reload()}}
+function startBar(){const b=$('bar');b.className='bar';void b.offsetWidth;b.classList.add('run')}
+frame.addEventListener('load',()=>{const b=$('bar');b.classList.add('done')});
+function reloadApp(){if(currentApp){startBar();try{frame.contentWindow.location.reload()}catch(e){frame.src=apps[currentApp].url}}}
 function openExternal(){if(currentApp)window.open(apps[currentApp].url,'_blank','noopener')}
-document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+
+const DOW={vi:['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'],kr:['일','월','화','수','목','금','토']};
+function tick(){
+ const d=new Date(),p=n=>String(n).padStart(2,'0'),h=d.getHours(),night=h<8||h>=20;
+ $('clock').innerHTML=`<span class="d">${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} (${DOW[lang][d.getDay()]})</span><span class="t">${p(h)}:${p(d.getMinutes())}</span><span class="shift${night?' night':''}"><i></i>${night?T('Ca đêm','야간'):T('Ca ngày','주간')}</span>`;
+}
+$('burger').addEventListener('click',()=>{
+ if(innerWidth<=860){document.body.classList.toggle('mopen');return}
+ document.body.classList.toggle('collapsed');
+ try{localStorage.setItem('assy_portal_side',document.body.classList.contains('collapsed')?'c':'')}catch(e){}
+});
+const tip=$('tip');
+$('nav').addEventListener('mouseover',e=>{const n=e.target.closest('.nav');if(!n||!document.body.classList.contains('collapsed'))return;const r=n.getBoundingClientRect();tip.textContent=n.dataset.tip||'';tip.style.left=(r.right+10)+'px';tip.style.top=(r.top+r.height/2-14)+'px';tip.style.display='block'});
+$('nav').addEventListener('mouseout',()=>tip.style.display='none');
 window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(apps[id])openApp(id);else goHome()});
+
+buildNav();buildHome();setLanguage(lang);tick();setInterval(tick,15000);
 const initial=location.hash.slice(1);if(apps[initial])openApp(initial);else goHome();
 </script>
 </body>
