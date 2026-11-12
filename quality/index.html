@@ -2014,17 +2014,179 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!ko && !vi) return '';
     return '<span class="nl nl-ko" lang="ko">' + (ko || vi) + '</span><span class="nl nl-vi" lang="vi">' + (vi || ko) + '</span>';
   }
-  var TR_GLOSS = [['실패비용률', 'tỷ lệ chi phí thất bại'], ['실패비용', 'chi phí thất bại'], ['자공정', 'tự công đoạn'], ['후공정', 'hậu công đoạn'], ['재작업', 'rework'], ['해체반입', 'hàng tháo dỡ nhập lại'], ['생산금액', 'giá trị sản xuất'], ['지그', 'jig'], ['금형', 'khuôn']];
-  function gloss(text, from) {
-    TR_GLOSS.forEach(function (g) { var a = from === 'ko' ? g[0] : g[1], b = from === 'ko' ? g[1] : g[0]; text = text.split(a).join(b); });
+/* ===== ASSY_TR — dịch nội dung nhập tay theo thuật ngữ nhà máy (VI ⇄ KO ⇄ EN) =====
+   1. Thay trước các thuật ngữ xưởng bằng đúng từ chuyên ngành của ngôn ngữ đích (từ điển bên dưới)
+      → máy dịch giữ nguyên các từ này, chỉ dịch phần câu còn lại → không còn kiểu "bắn MES" thành "MES 사격".
+   2. Gửi máy dịch với ngôn ngữ nguồn xác định rõ (không để 'auto' nhận nhầm câu không dấu).
+   3. Sửa lại một số cụm máy dịch hay dịch sai.
+   Mỗi dòng từ điển: [tiếng Việt (các cách viết, ngăn bằng |), 한국어 (từ đầu tiên là từ chuẩn), English] */
+window.ASSY_TR = window.ASSY_TR || (function () {
+  var G = [
+    /* [tiếng Việt | cách viết khác, 한국어 chuẩn | cách máy dịch hay viết (sẽ đổi về chuẩn), English (dùng làm từ khóa giữ nghĩa khi dịch)] */
+    /* ---- loại lỗi · 불량 유형 ---- */
+    ['đâm, vập, mẻ|đâm vập mẻ|đâm/vập/mẻ|đâm vập|vập mẻ|đâm', '찍힘|찌그러짐|움푹 들어감|덴트|움푹 패임', 'dent'],
+    ['xước|trầy xước|trầy', '스크래치|스크레치|긁힘|할퀴다', 'scratch'],
+    ['biến dạng|cong vênh', '변형', 'deformation'],
+    ['gãy|gẫy', '파손|부러짐|골절', 'breakage'],
+    ['nứt', '크랙|균열', 'crack'],
+    ['dị vật', '이물|이물질', 'foreign material'],
+    ['bụi bẩn|bụi', '이물(먼지)|먼지|더스트|흙|분진', 'dust'],
+    ['xịt bụi|thổi bụi|xịt khí|thổi khí|xịt air', '에어 블로우|에어블로우|에어블로|에어 블로|에어 블로잉|에어블로잉', 'air blow'],
+    ['vết bẩn|bám bẩn|ố bẩn', '오염', 'contamination'],
+    ['bọt khí', '기포', 'air bubble'],
+    ['vết lõm|lõm', '눌림', 'dent mark'],
+    ['bavia|ba via', '버(Burr)|버어', 'burr'],
+    ['tràn keo|keo tràn', '본드 넘침|접착제 넘침', 'glue overflow'],
+    ['bong tape|tape bị bong|phồng tape', '테이프 들뜸|테이프 박리', 'tape lifting'],
+    ['thiếu tape|sót tape|quên dán tape', '테이프 누락', 'missing tape'],
+    ['thiếu linh kiện|sót linh kiện', '부품 누락', 'missing component'],
+    ['lắp ngược', '역삽|역방향 조립', 'reversed assembly'],
+    ['khe hở|hở khe', '유격|간극', 'gap'],
+    ['lỗi ngoại quan', '외관 불량', 'cosmetic defect'],
+    ['lỗi chức năng|NG chức năng', '기능 불량', 'functional defect'],
+    ['điện trở', '저항', 'resistance'],
+    /* ---- công đoạn · thiết bị · 공정 / 설비 ---- */
+    ['công đoạn trước', '전공정|이전 공정', 'previous process'],
+    ['công đoạn sau', '후공정|다음 공정', 'next process'],
+    ['đầu hút|đầu hít|nozzle hút', '흡착 노즐|흡입 노즐|석션 노즐', 'suction nozzle'],
+    ['tay gắp|tay robot|tay kẹp', '로봇 그리퍼|그리퍼 로봇|피킹 암|로봇 팔', 'robot gripper'],
+    ['băng tải', '컨베이어', 'conveyor'],
+    ['dây curoa|dây cu roa|curoa', '벨트', 'belt'],
+    ['jig', '지그', 'jig'],
+    ['khuôn', '금형', 'mold'],
+    ['thay liệu|thay vật tư', '자재 교체', 'material change'],
+    ['hết case', '케이스 소진', 'out of cases'],
+    ['đổi model|chuyển model', '모델 체인지|모델 변경', 'model change'],
+    ['máy chủ|PC chủ', '메인 PC', 'main PC'],
+    ['phụ liệu', '부자재', 'sub-materials'],
+    ['thiếu vật tư|thiếu liệu|hết liệu|thiếu nguyên vật liệu', '자재 부족|자료 부족|소재 부족|재료 부족', 'material shortage'],
+    ['nguyên vật liệu|vật tư', '자재|자료|소재|재료', 'materials'],
+    ['bị lệch|lệch', '틀어짐|편차|오정렬|정렬 불량|잘못 정렬|어긋남', 'misalignment'],
+    ['sửa lại hàng|làm lại hàng|rework', '재작업', 'rework'],
+    ['bắn MES|quét MES|scan MES', 'MES 등록|MES 촬영|MES 사격|MES 스캔', 'MES registration'],
+    ['đăng ký NG|đăng ký lỗi', '불량 등록', 'NG registration'],
+    ['hàng tháo dỡ nhập lại|hàng tháo dỡ trả về', '해체반입', 'disassembled returns'],
+    ['chi phí thất bại', '실패비용|실패 비용', 'failure cost'],
+    ['dán vinyl|dán vinly', '비닐 부착', 'vinyl attaching'],
+    ['check sheet|checksheet|phiếu kiểm tra', '체크시트|체크 시트', 'check sheet'],
+    ['kiểm tra đầu ca', '초품 검사', 'first-article inspection'],
+    ['bộ phận mua hàng|phòng mua hàng', '구매팀|구매 부서', 'purchasing department'],
+    ['đơn yêu cầu mua hàng|đơn yêu cầu mua', '구매 요청서', 'purchase request form'],
+    ['chờ ký duyệt|chờ ký đơn', '결재 대기', 'awaiting approval'],
+    ['tăng ca', '잔업', 'overtime'],
+    ['ca ngày', '주간', 'day shift'],
+    ['ca đêm', '야간', 'night shift'],
+    ['nhân lực thời vụ|lao động thời vụ', '단기 인력', 'temporary workers']
+  ];
+  var LET = 'A-Za-zÀ-ỹ', VIC = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i;
+  var IDX = { vi: 0, ko: 1, en: 2 };
+  var rx = function (s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+  /* danh sách thuật ngữ nguồn (cụm dài thay trước) */
+  var CACHE = {};
+  function pairs(from) {
+    if (CACHE[from]) return CACHE[from];
+    var out = [];
+    G.forEach(function (g, gi) {
+      g[IDX[from]].split('|').forEach(function (src, k) { if (src && (from !== 'ko' || k === 0)) out.push([src, g[2], gi]); });
+    });
+    out.sort(function (a, b) { return b[0].length - a[0].length; });
+    return (CACHE[from] = out.map(function (p) {
+      var body = rx(p[0]).replace(/ /g, '\\s+');
+      var re = from === 'ko' ? new RegExp(body, 'g') : new RegExp('(^|[^' + LET + '])(' + body + ')(?=$|[^' + LET + '])', 'gi');
+      return [re, p[1], from === 'ko', p[2]];
+    }));
+  }
+  /* Cách dịch: thuật ngữ xưởng trong câu nguồn được đổi sang từ tiếng Anh chuẩn (máy dịch hiểu đúng nghĩa từ tiếng Anh
+     tốt hơn nhiều so với từ lóng xưởng); sau khi dịch, đổi các từ đó về đúng thuật ngữ chuẩn của ngôn ngữ đích. */
+  function inject(text, from, to) {
+    var used = [];
+    if (!text || from === to || from === 'en' || IDX[from] == null) return { text: text, used: used };
+    var keep = [], t = String(text);
+    pairs(from).forEach(function (p) {
+      t = t.replace(p[0], function () {
+        var a = arguments, lead = p[2] ? '' : a[1];
+        keep.push(p[1]); if (used.indexOf(p[3]) < 0) used.push(p[3]); return lead + '⁣' + (keep.length - 1) + '⁣';
+      });
+    });
+    return { text: t.replace(/⁣(\d+)⁣/g, function (m, i) { return keep[+i]; }), used: used };
+  }
+  function restore(text, to, used) {
+    used.forEach(function (gi) {
+      var g = G[gi], en = g[2], tgt = g[IDX[to]].split('|')[0];
+      if (to !== 'en') text = text.replace(new RegExp('(^|[^A-Za-z])' + rx(en) + '(?=$|[^A-Za-z])', 'gi'), function (m, a) { return a + tgt; });
+      if (to === 'ko') {
+        var vs = g[1].split('|').sort(function (a, b) { return b.length - a.length; }).map(rx);
+        text = text.replace(new RegExp(vs.join('|'), 'g'), tgt);
+      }
+    });
     return text;
   }
+  /* cụm máy dịch hay sai → sửa lại */
+  var POST = {
+    ko: [[/MES\s*(촬영|사격|쏘기|발사|스캔)/g, 'MES 등록'], [/엔지/g, 'NG'], [/(\d)\s*구역/g, '$1공장'], [/어퍼/g, 'UPPER'], [/로어/g, 'LOWER']],
+    vi: [[/nhà máy (\d)/gi, 'xưởng $1'], [/quá trình lắp ráp/gi, 'công đoạn lắp ráp'], [/tạp chất/gi, 'dị vật'], [/khiếm khuyết/gi, 'lỗi'], [/\bvết xước\b/gi, 'xước']],
+    en: [[/\bshoot(ing)? MES\b/gi, 'MES registration'], [/\bfactory (\d)\b/gi, 'Plant $1']]
+  };
+  function post(text, to) { (POST[to] || []).forEach(function (r) { text = text.replace(r[0], r[1]); }); return text; }
+  /* viết tắt hay gặp ở xưởng → viết rõ để máy dịch hiểu */
+  function pre(text) {
+    return String(text).replace(/(\d+)\s*H\s*\/\s*lần/gi, '$1 giờ/lần').replace(/(\d+)\s*h\s*\/\s*1\s*lần/gi, '$1 giờ/lần')
+      .replace(/\bSL\b/g, 'số lượng').replace(/\bKH\b/g, 'kế hoạch').replace(/\bTT\b/g, 'thực tế');
+  }
+  /* ngôn ngữ của một đoạn chữ */
+  function detect(text) {
+    var s = String(text || ''), h = (s.match(/[가-힣]/g) || []).length, l = (s.match(/[A-Za-zÀ-ỹ]/g) || []).length;
+    if (h && h * 2 >= l) return 'ko';
+    if (VIC.test(s)) return 'vi';
+    /* chữ không dấu: tiếng Việt gõ không dấu rất hay gặp ở xưởng */
+    if (/\b(khong|may|loi|thieu|hang|cong doan|thiet bi|dang|chua|da|bi|cua|va|nguyen nhan|xu ly|kiem tra|lech|xuoc)\b/i.test(s)) return 'vi';
+    return /[A-Za-z]{3}/.test(s) ? 'en' : 'vi';
+  }
+  /* tách cụm từ đã có sẵn dạng "VI (KO)" → không cần dịch */
+  function fetchGtx(q, from, to) {
+    var urls = ['https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=' + from + '&tl=' + to + '&q=',
+                'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=' + from + '&tl=' + to + '&q='];
+    var i = 0;
+    function next() {
+      if (i >= urls.length) return Promise.reject(new Error('tr'));
+      var u = urls[i++], ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, tm = setTimeout(function () { if (ctl) ctl.abort(); }, 9000);
+      return fetch(u + encodeURIComponent(q), ctl ? { signal: ctl.signal } : {}).then(function (r) {
+        clearTimeout(tm); if (!r.ok) throw 0; return r.json();
+      }).then(function (j) {
+        var t = Array.isArray(j) && Array.isArray(j[0]) && Array.isArray(j[0][0]) ? j[0].map(function (x) { return x && x[0] || ''; }).join('') : (Array.isArray(j[0]) ? j[0][0] : j[0]);
+        if (typeof t !== 'string' || !t.trim()) throw 0; return t;
+      }).catch(next);
+    }
+    return next();
+  }
+  /* dịch 1 đoạn (giữ nguyên xuống dòng) */
+  function translate(text, from, to) {
+    text = String(text == null ? '' : text);
+    if (!text.trim()) return Promise.resolve(text);
+    from = from && from !== 'auto' ? from : detect(text);
+    if (from === to) return Promise.resolve(text);
+    var ex = offline(text, from, to); if (ex != null) return Promise.resolve(ex);
+    var inj = inject(pre(text), from, to);
+    return fetchGtx(inj.text, from, to).then(function (t) { return post(restore(t, to, inj.used), to).trim(); });
+  }
+  /* không có mạng: chỉ dịch được khi cả dòng là 1 thuật ngữ trong từ điển */
+  function offline(text, from, to) {
+    from = from && from !== 'auto' ? from : detect(text);
+    var s = String(text || '').trim(), fi = IDX[from], ti = IDX[to];
+    if (fi == null || ti == null) return null;
+    for (var i = 0; i < G.length; i++) {
+      var opts = G[i][fi].split('|');
+      for (var j = 0; j < opts.length; j++) if (opts[j].toLowerCase() === s.toLowerCase()) return G[i][ti].split('|')[0];
+    }
+    return null;
+  }
+  return { G: G, inject: inject, restore: restore, pre: pre, post: post, detect: detect, translate: translate, offline: offline, VERSION: 2 };
+})();
+
   function translateText(text, from, to) {
     if (!text) return Promise.resolve('');
     if (window.QR_TRANSLATE) return Promise.resolve(window.QR_TRANSLATE(text, from, to));
-    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + from + '&tl=' + to + '&dt=t&q=' + encodeURIComponent(gloss(text, from));
-    return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { return (j[0] || []).map(function (x) { return x[0]; }).join(''); });
+    return window.ASSY_TR.translate(text, from, to);
   }
   var trTimer = {}, trSeq = {};
   function syncNote(key, f, src, now) {
@@ -2035,7 +2197,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       setSt(key, f, 'run', '⟳ 번역 중 · Đang dịch…');
       translateText(txt, src, to).then(function (out) {
         if (seq !== trSeq[id]) return;
-        o[f + '@' + to] = textToHtml(out); o[f + '@st'] = 'auto'; o[f + '@src'] = src; save(); paintNote(key, f, to);
+        o[f + '@' + to] = textToHtml(out); o[f + '@st'] = 'auto'; o[f + '@src'] = src; o[f + '@tv'] = 2; save(); paintNote(key, f, to);
         setSt(key, f, 'ok', '✓ 자동 번역됨 · Đã dịch tự động (' + src.toUpperCase() + '→' + to.toUpperCase() + ')');
       }).catch(function (e) {
         if (seq !== trSeq[id]) return;
@@ -2062,7 +2224,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if (f.indexOf('@') >= 0 || !o[f]) return;
         nObj(k, f);
         var src = o[f + '@src'] || (o[f + '@ko'] ? 'ko' : 'vi'), to = src === 'ko' ? 'vi' : 'ko';
-        if (o[f + '@' + src] && (!o[f + '@' + to] || o[f + '@st'] === 'fail')) { setTimeout(function () { syncNote(k, f, src, true); }, 400 * (n++)); }
+        var redo = o[f + '@st'] === 'auto' && o[f + '@tv'] !== 2;
+        if (o[f + '@' + src] && (!o[f + '@' + to] || o[f + '@st'] === 'fail' || redo)) { setTimeout(function () { syncNote(k, f, src, true); }, 400 * (n++)); }
       });
     });
   }
