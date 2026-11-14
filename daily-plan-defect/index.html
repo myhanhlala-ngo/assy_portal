@@ -10372,6 +10372,7 @@ function bindEvents(){
   document.getElementById('gmbStage').addEventListener('change', e=>{ gmbState.stage = e.target.value; gmbApply(); });
   document.getElementById('gmbClear').addEventListener('click', ()=>{ gmbState={model:'',stage:''}; gmbApply(); });
   { const gb=document.getElementById('gmbBar'); if(gb && document.getElementById('a253View').style.display==='none'){ gb.style.display='flex'; } gmbRefresh(document.getElementById('tblSearch').value); }
+  window.__setViewMode = setViewMode;
   document.getElementById('btnViewDay').addEventListener('click', ()=> setViewMode('day'));
   document.getElementById('btnViewCompare').addEventListener('click', ()=> setViewMode('compare'));
   document.getElementById('btnViewCmp2').addEventListener('click', ()=> setViewMode('cmp2'));
@@ -13455,6 +13456,13 @@ function dpdGoLatest(){
   if(PSWAP){ PSWAP.activeDate = latest; DB.days = buildMonthDays(PSWAP.days); DB.activeDate = latest.slice(0,7); }
   else DB.activeDate = latest;
   try{ if(typeof ydState!=='undefined' && ydState) ydState.period = latest.slice(0,7); }catch(e){}
+  /* bản HTML đã lưu có thể đang mở sẵn 1 tab (vd Chi phí thiệt hại) với bảng vẽ cũ → vẽ lại đúng tab đang hiện */
+  setTimeout(() => {
+    const V = {dayView:'day', compareView:'compare', cmp2View:'cmp2', a253View:'a253', postView:'post', ownView:'own', totalView:'total', costView:'cost'};
+    let mode = currentViewMode;
+    for(const id in V){ const el = document.getElementById(id); if(el && el.style.display === 'block'){ mode = V[id]; break; } }
+    try{ if(window.__setViewMode) window.__setViewMode(mode); }catch(e){ console.warn(e); }
+  }, 0);
 }
 
 /* ===== ASSY_SYNC_ADAPTER_END ===== */
