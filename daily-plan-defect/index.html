@@ -10852,11 +10852,37 @@ function parseKpiPriceFile(rows, fileName){
   const H=rows[h].map(x=>String(x).trim()), cC=H.indexOf('품목'), cP=H.indexOf('단가'), cN=H.indexOf('품목명');
   const prices={}, names={}; let n=0;
   for(let i=h+1;i<rows.length;i++){ const r=rows[i]; const cd=String(r[cC]||'').trim(); if(!cd) continue; const p=Number(r[cP]); if(!isFinite(p)) continue; prices[cd]=p; if(cN>=0) names[cd]=String(r[cN]||'').trim(); n++; }
-  DB.kpiPrice = {prices, names, file:fileName||'', at:Date.now()};
-  return {items:Object.keys(prices).length};
+  /* đơn giá KPI theo kỳ: hỏi tháng bắt đầu áp dụng → các tháng trước giữ đơn giá cũ */
+  const now=new Date(), defYm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  let ans = window.prompt('Áp dụng đơn giá thành phẩm mới ('+(fileName||'KPI')+') từ tháng nào?\n적용 시작 월 (YYYY-MM)\n\n• Các tháng trước đó giữ nguyên đơn giá cũ\n• Xóa trống ô này = tính lại TẤT CẢ các tháng theo đơn giá mới', defYm);
+  if(ans===null) throw new Error('Đã hủy cập nhật đơn giá KPI');
+  ans=String(ans).trim(); const mm=ans.match(/^(\d{4})[-\/.](\d{1,2})$/);
+  const rec={prices, names, file:fileName||'', at:Date.now()};
+  if(mm){
+    const from=mm[1]+'-'+mm[2].padStart(2,'0');
+    DB.kpiPriceFrom = Object.assign({}, DB.kpiPriceFrom||{}, {[from]:rec});
+    if(!DB.kpiPrice) DB.kpiPrice = {prices:{}, names:{}, file:'', at:0};
+  } else {
+    DB.kpiPrice = {prices:Object.assign({}, DB.kpiPrice&&DB.kpiPrice.prices, prices), names:Object.assign({}, DB.kpiPrice&&DB.kpiPrice.names, names), file:fileName||'', at:Date.now()};
+    DB.kpiPriceFrom = {};
+  }
+  return {items:Object.keys(prices).length, from: mm ? mm[1]+'-'+mm[2].padStart(2,'0') : 'all'};
+}
+/* bảng đơn giá KPI cho 1 ngày: đơn giá gốc + các lần cập nhật có hiệu lực tới tháng của ngày đó */
+const _kpiCache={};
+function kpiYmOf(day){ const m=String((day&&day.dateLabel)||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? m[3]+'-'+m[2].padStart(2,'0') : (DB.activeDate||'').slice(0,7); }
+function kpiTable(day){
+  const base=DB.kpiPrice||{}, F=DB.kpiPriceFrom||{}, ym=kpiYmOf(day);
+  const ks=Object.keys(F).filter(k=>k<=ym).sort();
+  if(!ks.length) return base.prices ? base : null;
+  const sig=ym+'|'+(base.at||0)+'|'+ks.map(k=>k+':'+F[k].at).join(',');
+  if(_kpiCache[ym] && _kpiCache[ym].sig===sig) return _kpiCache[ym].t;
+  const t={prices:Object.assign({}, base.prices), names:Object.assign({}, base.names), file:F[ks[ks.length-1]].file};
+  ks.forEach(k=>{ Object.assign(t.prices, F[k].prices); Object.assign(t.names, F[k].names); });
+  _kpiCache[ym]={sig,t}; return t;
 }
 function fcProdKpi(day){
-  const P = DB.kpiPrice && DB.kpiPrice.prices; if(!P || !day || !day.okByCode) return null;
+  const KT = kpiTable(day), P = KT && KT.prices; if(!P || !day || !day.okByCode) return null;
   let amt=0, miss=0; Object.entries(day.okByCode).forEach(([cd,q])=>{ if(P[cd]===undefined) miss+=q; else amt+=q*P[cd]; });
   return {amt, miss};
 }
@@ -11050,7 +11076,7 @@ function handleRawMesFiles(fileList){
     day.groups = day.groups.filter(g=>(g.subs||[]).length);
     recomputeGroupTotals(day);
     day.footerNotes = null;
-    { const kp = fcProdKpi(day); if(kp && kp.miss>0){ const P=DB.kpiPrice.prices; const codes=Object.keys(day.okByCode||{}).filter(c=>P[c]===undefined);
+    { const kp = fcProdKpi(day); if(kp && kp.miss>0){ const P=(kpiTable(day)||{prices:{}}).prices; const codes=Object.keys(day.okByCode||{}).filter(c=>P[c]===undefined);
         setTimeout(()=>toast(`⚠ ${codes.length} mã item (${fmt(kp.miss)} EA) chưa có trong bảng đơn giá KPI: ${codes.slice(0,4).join(', ')}${codes.length>4?'…':''} — tiền SX (제품단가) của các mã này chưa được tính. Nạp file 생산금액 현황 조회 (PZ043QA90) mới khi có item mới.`, true), 4200); } }
     saveDB();
     populateDaySelect();
@@ -11607,7 +11633,7 @@ function ydConfirmImport(){
 /* ---------- Ghép dữ liệu: sheet + báo cáo ngày ---------- */
 /* Tiền SX theo giá thành phẩm (KPI 표준단가) của từng công đoạn trong 1 ngày: Σ 양품 theo mã item × đơn giá KPI */
 function kpiProdBySub(day){
-  const P = DB.kpiPrice && DB.kpiPrice.prices, N = (DB.kpiPrice && DB.kpiPrice.names) || {};
+  const KT = kpiTable(day), P = KT && KT.prices, N = (KT && KT.names) || {};
   if(!P || !day || !day.okByCode) return null;
   const known = (day.groups||[]).map(g=>g.group), map = {}; let miss = 0;
   Object.entries(day.okByCode).forEach(([cd,q])=>{
@@ -13107,7 +13133,7 @@ function fcRenderTrendSum(dk, series){
     ${row(`달성 여부 (목표 ≤ ${FC_TARGET_PROC.toFixed(1)}%)`,'Đạt mục tiêu · đơn giá gia công', d=>c(d, d.r2===null?'—':(d.r2<=FC_TARGET_PROC?'<span class="fc2-ok">● 달성</span>':'<span class="fc2-ng">▲ 미달</span>')), 'fc2-t')}
   </tbody></table>
   ${S.some(d=>d.miss)?`<div class="pv-note" style="margin:8px 0 0;color:#B4530A;font-weight:700">⚠ ${S.filter(d=>d.miss).map(d=>d.label).join(', ')}: chưa nạp file 실패비용 상세현황 (Q6300QA40) → không có chi phí thiệt hại (không ước tính). Nạp file của ngày đó để cập nhật.<span class="ko">실패비용 파일 미입력 일자 — 손실비용 미표시</span></div>`:''}
-  <div class="pv-note" style="margin:8px 0 0">${S.some(d=>d.s.kpi) ? `생산금액(제품단가) = Σ 양품생산수량 theo mã item (생산일보 재료비 PZ034QA31) × <b>KPI 표준단가</b> (생산금액 현황 조회 PZ043QA90${DB.kpiPrice&&DB.kpiPrice.file?' · '+gmbEsc(DB.kpiPrice.file):''}, ${Object.keys((DB.kpiPrice||{}).prices||{}).length} item)${S.some(d=>d.s.kpiMiss)?' · * = có item chưa có đơn giá KPI':''}. 생산금액(가공단가) và các khoản chi phí lấy` : `Số liệu lấy`} từ sheet ngày của báo cáo 실패비용 상세현황(★)(Q6300QA40_KO477)${S.some(d=>d.s.kpi)?'':': 생산금액 = dòng 제품비 / 가공비'}, các khoản chi phí = tổng cột của sheet; quy đổi 1 KRW = ${EXCHANGE_RATE} VND. 실패비용률 = 실패비용 ÷ 생산금액. Mục tiêu: 제품단가 ≤ ${FC_TARGET_PROD.toFixed(1)}% · 가공단가 ≤ ${FC_TARGET_PROC.toFixed(1)}%.Chi phí thực (chưa trừ nhập tái chế 해체반입) xem tại khung Phân tích bên dưới.<span class="ko">실패비용 상세현황 일별 시트 기준 · 기타 = 해체반입 + 기타 실패비용</span></div>`;
+  <div class="pv-note" style="margin:8px 0 0">${S.some(d=>d.s.kpi) ? `생산금액(제품단가) = Σ 양품생산수량 theo mã item (생산일보 재료비 PZ034QA31) × <b>KPI 표준단가</b> (생산금액 현황 조회 PZ043QA90${(()=>{const F=DB.kpiPriceFrom||{},ks=Object.keys(F).sort(),b=DB.kpiPrice||{};return (b.file?' · '+gmbEsc(b.file)+' ('+Object.keys(b.prices||{}).length+' item)':'')+ks.map(k=>' · từ '+k.slice(5)+'/'+k.slice(0,4)+': '+gmbEsc(F[k].file)+' ('+Object.keys(F[k].prices||{}).length+' item)').join('')})()})${S.some(d=>d.s.kpiMiss)?' · * = có item chưa có đơn giá KPI':''}. 생산금액(가공단가) và các khoản chi phí lấy` : `Số liệu lấy`} từ sheet ngày của báo cáo 실패비용 상세현황(★)(Q6300QA40_KO477)${S.some(d=>d.s.kpi)?'':': 생산금액 = dòng 제품비 / 가공비'}, các khoản chi phí = tổng cột của sheet; quy đổi 1 KRW = ${EXCHANGE_RATE} VND. 실패비용률 = 실패비용 ÷ 생산금액. Mục tiêu: 제품단가 ≤ ${FC_TARGET_PROD.toFixed(1)}% · 가공단가 ≤ ${FC_TARGET_PROC.toFixed(1)}%.Chi phí thực (chưa trừ nhập tái chế 해체반입) xem tại khung Phân tích bên dưới.<span class="ko">실패비용 상세현황 일별 시트 기준 · 기타 = 해체반입 + 기타 실패비용</span></div>`;
 }
 
 function fcRenderTrend(dk, series){
