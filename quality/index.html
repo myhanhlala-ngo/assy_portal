@@ -1357,7 +1357,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         log.push(['yield', r.file, Object.keys(r.days).join(','), r.count]);
       } else if (r.type === 'kpi') {
         addItems(r.items, false);
-        state.kpi = { prices: r.prices, src: r.file };
+        /* đơn giá KPI theo kỳ: chọn tháng bắt đầu áp dụng → các tháng trước giữ đơn giá cũ */
+        var now = new Date(), defYm = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2);
+        var ans = window.prompt('Áp dụng đơn giá thành phẩm mới (' + r.file + ') từ tháng nào?\n적용 시작 월 (YYYY-MM)\n\n• Các tháng trước đó giữ nguyên đơn giá cũ\n• Xóa trống ô này = tính lại TẤT CẢ các tháng theo đơn giá mới', defYm);
+        if (ans === null) { log.push(['kpi', r.file, 'Đã hủy', 0]); return; }
+        ans = String(ans).trim();
+        var mm = ans.match(/^(\d{4})[-\/.](\d{1,2})$/);
+        if (mm) {
+          var from = mm[1] + '-' + ('0' + mm[2]).slice(-2);
+          state.kpiFrom = state.kpiFrom || {};
+          state.kpiFrom[from] = { prices: r.prices, src: r.file, at: new Date().toISOString() };
+        } else {
+          state.kpi = { prices: Object.assign({}, state.kpi && state.kpi.prices, r.prices), src: r.file };
+          state.kpiFrom = {};
+        }
         var miss = applyKpi(state);
         log.push(['kpi', r.file, Object.keys(r.prices).length + ' mã' + (miss.length ? ' · thiếu giá: ' + miss.join(', ') : ''), r.count]);
       } else if (r.type === 'daily') {
@@ -1378,12 +1391,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   /* 생산금액 = 양품생산수량 × KPI 표준단가 (PZ043QA90). Mã chưa có đơn giá KPI → giữ 생산금액 của file PZ034 */
+  /* bảng đơn giá KPI dùng cho 1 tháng: đơn giá gốc + các lần cập nhật có hiệu lực từ tháng đó trở về trước */
+  function kpiFor(state, ym) {
+    var base = (state.kpi && state.kpi.prices) || {}, f = state.kpiFrom || {};
+    var ks = Object.keys(f).filter(function (k) { return k <= ym; }).sort();
+    if (!ks.length) return base;
+    var p = Object.assign({}, base);
+    ks.forEach(function (k) { Object.assign(p, f[k].prices); });
+    return p;
+  }
   function applyKpi(state) {
-    var kp = state.kpi && state.kpi.prices, miss = {};
-    if (!kp) return [];
+    var miss = {}, cache = {};
+    if (!(state.kpi && state.kpi.prices) && !(state.kpiFrom && Object.keys(state.kpiFrom).length)) return [];
     for (var d in state.days) {
       var day = state.days[d], it = day.prodItems;
       if (!it) continue;
+      var ym = d.slice(0, 7), kp = cache[ym] || (cache[ym] = kpiFor(state, ym));
       var sum = 0;
       for (var c in it) { if (kp[c] != null) sum += it[c][0] * kp[c]; else { sum += it[c][1]; miss[c] = 1; } }
       day.prod = sum;
@@ -2847,7 +2870,7 @@ window.ASSY_TR = window.ASSY_TR || (function () {
       showResult(report);
     });
   }
-  var KIND = { fcd: ['fc', '실패비용 (1일)'], fc: ['fc', '실패비용 원본'], self: ['self', '자공정 불량'], post: ['post', '후공정 불량'], erp: ['erp', 'Bảng ERP'], daily: ['daily', 'Kế hoạch/Nhân lực'] };
+  var KIND = { fcd: ['fc', '실패비용 (1일)'], fc: ['fc', '실패비용 원본'], self: ['self', '자공정 불량'], post: ['post', '후공정 불량'], erp: ['erp', 'Bảng ERP'], daily: ['daily', 'Kế hoạch/Nhân lực'], kpi: ['erp', 'KPI 표준단가 · Đơn giá thành phẩm'] };
   function showResult(report) {
     var h = '<ul class="res-list">' + report.map(function (r) {
       if (r.err) return '<li><span class="tag err">Lỗi</span><b>' + esc(r.file) + '</b> – ' + esc(r.err) + '</li>';
@@ -2857,7 +2880,8 @@ window.ASSY_TR = window.ASSY_TR || (function () {
         if (x.type === 'fc' || x.type === 'fcd') info = (x.date || x.ym) + ' · ' + Object.keys(x.items).length + ' mã · tổng ' + fmt(x.month.total / 1e6, 1) + ' tr VND';
         else if (x.type === 'self' || x.type === 'post') info = Object.keys(x.days).length + ' ngày · ' + fmt(x.count) + ' dòng';
         else if (x.type === 'erp') info = Object.keys(x.days).length + ' ngày / ' + Object.keys(x.months).length + ' tháng';
-        else info = Object.keys(x.days).length + ' ngày';
+        else if (x.type === 'kpi') { var kf = state.kpiFrom ? Object.keys(state.kpiFrom).sort().pop() : ''; info = Object.keys(x.prices || {}).length + ' mã đơn giá' + (kf ? ' · áp dụng từ tháng ' + kf.slice(5) + '/' + kf.slice(0, 4) + ' (các tháng trước giữ đơn giá cũ)' : ' · áp dụng tất cả các tháng'); }
+        else info = Object.keys(x.days || {}).length + ' ngày';
         return '<li><span class="tag ' + k[0] + '">' + k[1] + '</span><b>' + esc(r.file) + '</b> <span class="muted">[' + esc(x.sheet) + ']</span><div class="muted" style="font-size:12px">' + info + '</div></li>';
       }).join('');
     }).join('') + '</ul>';
