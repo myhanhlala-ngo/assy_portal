@@ -13427,20 +13427,35 @@ function fcRenderMonth(dk){
     anchor: '#btnToggleToolbar', anchorPos: 'beforebegin',
     refresh: () => {
       const last = o => Object.keys(o || {}).sort().pop();
+      const firstOpen = !window.__dpdOpened;
+      if(firstOpen){ window.__dpdOpened = true; dpdGoLatest(); }
       if(PSWAP){
         if(!PSWAP.days[PSWAP.activeDate]) PSWAP.activeDate = last(PSWAP.days);
         DB.days = buildMonthDays(PSWAP.days);
         if(!DB.days[DB.activeDate]) DB.activeDate = last(DB.days);
       } else if(!DB.days[DB.activeDate]) DB.activeDate = last(DB.days);
       if(!DB.activeDate) return;
-      const sel = document.getElementById('daySelect'), keep = sel ? sel.value : null;
+      const sel = document.getElementById('daySelect'), keep = (sel && !firstOpen) ? sel.value : null;
       populateDaySelect();
       if(sel && keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
       renderAll();
     }
   });
   window.__assySync = SYNC;
+  /* không có mạng / server chưa trả lời sau 6 giây → vẫn mở ngày mới nhất từ dữ liệu trên máy */
+  setTimeout(() => { if(!window.__dpdOpened){ window.__dpdOpened = true; dpdGoLatest(); populateDaySelect(); renderAll(); } }, 6000);
 })();
+
+/* Mở trang: luôn hiện NGÀY CÓ SỐ LIỆU MỚI NHẤT (không quá hôm nay) thay vì ngày xem lần trước / ngày trong bản HTML đã lưu */
+function dpdGoLatest(){
+  const days = PSWAP ? PSWAP.days : DB.days, n = new Date();
+  const today = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  const ks = Object.keys(days||{}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) && k <= today && days[k] && (days[k].groups||[]).length).sort();
+  const latest = ks.pop(); if(!latest) return;
+  if(PSWAP){ PSWAP.activeDate = latest; DB.days = buildMonthDays(PSWAP.days); DB.activeDate = latest.slice(0,7); }
+  else DB.activeDate = latest;
+  try{ if(typeof ydState!=='undefined' && ydState) ydState.period = latest.slice(0,7); }catch(e){}
+}
 
 /* ===== ASSY_SYNC_ADAPTER_END ===== */
 window.__DB = ()=>DB;
