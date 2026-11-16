@@ -91,7 +91,8 @@ export async function onRequestPost({ request, env }) {
   if (role !== "edit") return json({ error: "Chế độ chỉ xem – không được sửa" }, 403);
   try {
     const body = await request.json().catch(() => null);
-    const ops = body && Array.isArray(body.ops) ? body.ops : null;
+    /* nhận cả 2 dạng: { ops:[…] } (chuẩn) và […] (bản trang cũ gửi thẳng mảng) */
+    const ops = Array.isArray(body) ? body : (body && Array.isArray(body.ops) ? body.ops : null);
     if (!ops || !ops.length || ops.length > 50) return json({ error: "Invalid ops" }, 400);
     await ensure(env.DB);
     const last = (await env.DB.prepare("SELECT MAX(ver) AS v FROM hc_docs").first())?.v || 0;
