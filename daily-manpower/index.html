@@ -968,19 +968,9 @@ function gsCall(fn,arg){ return new Promise((res,rej)=>{ if(!GS){rej(new Error('
 let NET=false;
 /* kho dữ liệu chung: mở từ trang Cloudflare → dùng cùng trang; mở file HTML trên máy / trang khác → kết nối máy chủ chung */
 const HC_REMOTE='https://assy-portal.pages.dev';
-const HC_BASE=(()=>{
-  try {
-    const saved=localStorage.getItem('dailyhc.server');
-    if(saved) return saved.replace(/\/$/,'');
-  } catch(e){}
-
-  const h=location.hostname;
-  const root=new URL(HC_REMOTE).hostname;
-
-  return (h===root || h.endsWith('.'+root))
-    ? location.origin
-    : HC_REMOTE;
-})();
+// Production và mọi Preview deployment của project đều dùng API cùng origin.
+const HC_PAGES_HOST=(()=>{const h=location.hostname, root=new URL(HC_REMOTE).hostname;return h===root||h.endsWith('.'+root);})();
+const HC_BASE=(()=>{if(HC_PAGES_HOST)return '';try{const o=localStorage.getItem('dailyhc.server');if(o!=null)return o.replace(/\/$/,'');}catch(e){} return HC_REMOTE;})();
 const hcTok=()=>{try{return localStorage.getItem('dailyhc.token')||'';}catch(e){return '';}};
 const hcH=(h)=>{const t=hcTok();return Object.assign({},h||{},t?{'x-hc-token':t}:{});};
 function makeNetDb(){
@@ -992,15 +982,9 @@ function makeNetDb(){
     if(!r.ok||j.error) throw new Error(j.error||('HTTP '+r.status)); return j;
   }
 async function post(ops){
-  if(NET && !(await ensureNetEdit()))
-    throw new Error('Cần đăng nhập bằng tài khoản có quyền chỉnh sửa');
-
-  return apiJson(API,{
-    method:'POST',
-    headers:{'content-type':'application/json'},
-    body:JSON.stringify(ops)
-  });
-}
+    if(NET && !(await ensureNetEdit())) throw new Error('Cần đăng nhập bằng tài khoản có quyền chỉnh sửa');
+    return apiJson(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ops})});
+  }
   async function get(params={}){ const q=new URLSearchParams(params); return apiJson(API+(q.toString()?'?'+q.toString():'')); }
   function notify(changed){
     subs.forEach(s=>{
@@ -1061,34 +1045,19 @@ async function post(ops){
 }
 async function netProbe(){
   try{
-    const r=await fetch(HC_BASE+'/api/hc/db?since='+(Date.now()+864e5),{
-      cache:'no-store',
-      credentials:'same-origin',
-      headers:hcH()
-    });
+    const r=await fetch(HC_BASE+'/api/hc/db?since='+(Date.now()+864e5),{cache:'no-store',credentials:'same-origin',headers:hcH()});
     if(r.status===401) return false;
-    const j=await r.json().catch(()=>null);
+    const j=r.ok?await r.json().catch(()=>null):null;
     if(!(j&&Array.isArray(j.docs))) return false;
-
-    // Cho phép xem công khai, chỉ yêu cầu xác thực khi thực hiện ghi dữ liệu.
-    const a=await fetch(HC_BASE+'/api/hc/login',{
-      cache:'no-store',
-      credentials:'same-origin',
-      headers:hcH()
-    });
-    const aj=await a.json().catch(()=>null);
-    if(aj){
-      NET_AUTH=!!aj.auth;
-      NET_ROLE=NET_AUTH?'edit':'view';
-    }else{
-      NET_AUTH=false;
-      NET_ROLE='view';
-    }
+    // Cho phép xem công khai; chỉ yêu cầu xác thực khi thực hiện ghi dữ liệu.
+    const a=await fetch(HC_BASE+'/api/hc/login',{cache:'no-store',credentials:'same-origin',headers:hcH()});
+    const aj=a.ok?await a.json().catch(()=>null):null;
+    if(aj){NET_AUTH=!!aj.auth;NET_ROLE=aj.role||(NET_AUTH?'edit':'view');}
+    else { NET_AUTH=false; NET_ROLE='view'; }
     return true;
-  }catch(e){
-    return false;
-  }
+  }catch(e){ return false; }
 }
+
 let NET_ROLE='view', NET_AUTH=false, loginWait=null;
 function netLogin(){
   if(loginWait) return loginWait;
