@@ -334,6 +334,10 @@ table.t3{min-width:1240px;font-size:12.5px;table-layout:fixed}
 .t3 tr.kmat select.s3[data-f="kind"]{color:#b45309;font-weight:600}
 .t3 tr.kret select.s3[data-f="kind"]{color:#0f766e;font-weight:600}
 .t3 tr.kmv select.s3[data-f="kind"]{color:#6d28d9;font-weight:600}
+.dd3{position:fixed;z-index:9999;background:var(--surface,#fff);border:1px solid #c9d2e3;border-radius:8px;box-shadow:0 10px 28px rgba(15,30,60,.18);padding:4px;display:grid;gap:1px;max-height:320px;overflow:auto}
+.dd3 button{all:unset;cursor:pointer;padding:7px 12px;border-radius:5px;font-size:13.5px;white-space:nowrap;color:var(--ink,#172033)}
+.dd3 button:hover{background:#eef3fb}.dd3 button.on{background:#1f3a8a;color:#fff}
+.dd3 .hint{font-size:11px;color:#6b7690;padding:5px 12px 3px;border-top:1px dashed #d5dbe6;margin-top:3px;white-space:nowrap}
 .t3 button.x3{border:0;background:transparent;color:var(--bad);font-size:16px;line-height:1;cursor:pointer;width:100%;height:24px}
 .t3 button.x3:focus-visible{outline:2px solid var(--accent)}
 .t3bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -1981,12 +1985,12 @@ $('aExcel').onclick=async()=>{
   const work=ds.map((_,i)=>i).filter(i=>Sx.isWork[i]&&Sx.tot[i]);
   const fW=work[0], lW=work[work.length-1];
   const F=(L,n)=>`${L}${n}`;
-  const SR="'입사·퇴사 명단'", KL=(k)=>{const a=KINDS.find(x=>x[0]===k);return LANG==='ko'?a[2]:a[1];}, KIN=`{"*${KL('in')}*","*${KL('ret')}*"}`, KOUT=`{"*${KL('out')}*","*${KL('mat')}*"}`;
+  const SR="'입사·퇴사 명단'", KL=(k)=>{const a=KINDS.find(x=>x[0]===k);return LANG==='ko'?a[2]:a[1];}, KIN=`{"*${KL('in')}*","*${KL('ret')}*"}`, KOUT=`{"*${KL('out')}*","*${KL('mat')}*","*${KL('mv')}*"}`;
   const xlSer=(d)=>(Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10))-Date.UTC(1899,11,30))/864e5;
   // đếm biến động trong khoảng ngày (lo, hi]; nghỉ việc tính từ hôm sau → lùi khoảng 1 ngày
   const XA=`${SR}!$A$4:$A$3000`, XF=`${SR}!$F$4:$F$3000`;
   const cUp=(lo,hi)=>`SUMPRODUCT(COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},${KIN}))`;
-  const cDn=(lo,hi)=>`(COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},"*${KL('out')}*")+COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},"*${KL('mat')}*"))`;
+  const cDn=(lo,hi)=>`(COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},"*${KL('out')}*")+COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},"*${KL('mat')}*")+COUNTIFS(${XA},">"&${lo},${XA},"<="&${hi},${XF},"*${KL('mv')}*"))`;
   function dayFormula(r,i){
     const L=colL(i), k=r.k, s=k[0];
     const AB=(kk)=>pf(MAPB[kk])+L+MAPB[kk].row, RB=(k1,k2)=>pf(MAPB[k1])+L+MAPB[k1].row+':'+L+MAPB[k2].row;
@@ -2352,12 +2356,12 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.datase
 /* ---------- tab 3: 입사·퇴사 명단 ---------- */
 const DEPTS=[['cn','Công nhân','생산직'],['nv','Nhân viên','사무직'],['erp','ERP','전산(ERP)'],['tb','Thiết bị','설비'],['auto','Auto','자동화'],['ld','Leader (TT)','리더(TT)'],['qc','Chất lượng QC','품질(QC)'],['ql','Quản lý','관리자'],['vt','Văn thư','서무'],['pd','Phiên dịch','통역']];
 const TYPES=[['dir','Trực tiếp','직접'],['ind','Gián tiếp','간접']];
-const KINDS=[['in','Nhân mới','입사'],['out','Nghỉ việc','퇴사'],['mat','Nghỉ thai sản','출산휴가'],['ret','Thai sản đi làm lại','복직'],['mv','Chuyển bộ phận','부서 이동']];   // mv: không tính tăng/giảm
+const KINDS=[['in','Nhân mới','입사'],['out','Nghỉ việc','퇴사'],['mat','Nghỉ thai sản','출산휴가'],['ret','Thai sản đi làm lại','복직'],['mv','Chuyển bộ phận','부서 이동']];   // mv: tính giảm như nghỉ việc
 // tăng nhân lực: nhân mới, thai sản đi làm lại · giảm: nghỉ việc, nghỉ thai sản
 function kUp(k){return k==='in'||k==='ret';}
 
 function effDate(r){ return r.date;
-  if(r.kind!=='out'||!r.date) return r.date; const d=new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)+1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } function kDn(k){return k==='out'||k==='mat';}
+  if((r.kind!=='out'&&r.kind!=='mv')||!r.date) return r.date; const d=new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)+1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } function kDn(k){return k==='out'||k==='mat'||k==='mv';}
 const F3=['date','emp','name','dept','type','kind','reason','note'];
 const OPTS={dept:DEPTS,type:TYPES,kind:KINDS};
 let STAFF_CUR={}, D3N=5; try{D3N=+localStorage.getItem('dailyhc.d3n')||5;}catch(e){}
@@ -2402,7 +2406,7 @@ async function saveStaff(now){
   if(now) return go(); staffTimer=setTimeout(go,600);
 }
 function staffMonths(){const s2=new Set(STAFF.map(r=>(r.date||'').slice(0,7)).filter(Boolean));if(cur)s2.add(cur);return [...s2].sort();}
-function build3(){
+function build3(){ try{closeDD3();}catch(e){}
   const T=$('tbl3'); if(!T) return;
 
   const fs=$('f3'); const ms=staffMonths();
@@ -2438,7 +2442,7 @@ function sum3(ym){
   const dts=d3Days(ym), set=new Set(dts);
   const rows=DEPTS.map(a=>[a[0],a]); if(STAFF.some(r=>set.has(r.date)&&(kUp(r.kind)||kDn(r.kind))&&!r.dept)) rows.push(['',null]);
   const cnt=(dep,dt)=>{let a=0,b=0; STAFF.forEach(r=>{ if(r.date!==dt||!(r.emp||r.name)||(dep!=null&&(r.dept||'')!==dep)) return; if(kUp(r.kind))a++; else if(kDn(r.kind))b++; }); return [a,b];};
-  const cellTxt=(a,b)=>{const v=a-b; return {v,t:!a&&!b?'-':v===0?'0':(v>0?'+':'')+v, c:!a&&!b?'z':v<0?'neg':v>0?'pos':'z', tip:a||b?`+${a} tăng (vào làm / thai sản đi làm lại) · −${b} giảm (nghỉ việc / nghỉ thai sản)`:''};};
+  const cellTxt=(a,b)=>{const v=a-b; return {v,t:!a&&!b?'-':v===0?'0':(v>0?'+':'')+v, c:!a&&!b?'z':v<0?'neg':v>0?'pos':'z', tip:a||b?`+${a} tăng (vào làm / thai sản đi làm lại) · −${b} giảm (nghỉ việc / nghỉ thai sản / chuyển bộ phận)`:''};};
   const totTxt=(v,any)=>!any?'-':v<0?`(${-v})`:v>0?`+${v}`:'0';
   const opt=[[5,'5 ngày gần nhất','최근 5일'],[7,'7 ngày gần nhất','최근 7일'],[10,'10 ngày gần nhất','최근 10일'],[0,'Cả tháng','월 전체']];
   const per=ym?t(`Tháng ${+ym.slice(5)}/${ym.slice(0,4)}`,`${ym.slice(0,4)}년 ${+ym.slice(5)}월`):t('Tất cả','전체');
@@ -2457,7 +2461,7 @@ function sum3Refresh(){ sum3(SUM3_YM); }
 function staffPivot(wb,FONT,fill,C,thin){
   const w=wb.getWorksheet('입사·퇴사 명단'); if(!w) return;
   const dts=d3Days(SUM3_YM), c0=10, R0=3, SH='$A$4:$A$3000', SD='$D$4:$D$3000', SK='$F$4:$F$3000';
-  const kin=`{"${lab3(KINDS,'in')}","${lab3(KINDS,'ret')}"}`, kout=`{"${lab3(KINDS,'out')}","${lab3(KINDS,'mat')}"}`;
+  const kin=`{"${lab3(KINDS,'in')}","${lab3(KINDS,'ret')}"}`, kout=`{"${lab3(KINDS,'out')}","${lab3(KINDS,'mat')}","${lab3(KINDS,'mv')}"}`;
   const ser=(d)=>(Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10))-Date.UTC(1899,11,30))/864e5;
   const st=(c,o={})=>{c.font={name:FONT,size:10,bold:!!o.b,color:{argb:o.fc||C.ink}};c.alignment={horizontal:'center',vertical:'middle'};c.border={top:thin,bottom:thin,left:thin,right:thin};if(o.f)c.fill=fill(o.f);if(o.fmt)c.numFmt=o.fmt;};
   const ttl=w.getCell(1,c0); ttl.value=t('Biến động theo bộ phận','부서별 입·퇴사')+' ('+dts[0].slice(8,10)+'/'+dts[0].slice(5,7)+' ~ '+dts[dts.length-1].slice(8,10)+'/'+dts[dts.length-1].slice(5,7)+')'; ttl.font={name:FONT,size:12,bold:true,color:{argb:C.navy2}};
@@ -2560,6 +2564,22 @@ function fill3(){
   toast(t(`Đã điền xuống ${n} dòng`,`${n}행 아래로 채움`)); }
 $('fill3').addEventListener('mousedown',e=>e.preventDefault());       // giữ nguyên vùng chọn khi bấm nút
 $('fill3').onclick=fill3;
+/* Ô chọn (Phòng ban / Loại CNV / Loại biến động): bấm chuột mở danh sách riêng thay cho danh sách của trình duyệt
+   → vừa chọn được từ danh sách, vừa dán (Ctrl+V) thẳng vào ô, kể cả dòng trống; kéo chuột qua nhiều ô để chọn vùng */
+let dd3=null, dd3Pend=null;
+function closeDD3(){ if(dd3){ dd3.remove(); dd3=null; } }
+function openDD3(sel){ closeDD3(); const r=sel.getBoundingClientRect(); const d=document.createElement('div'); d.className='dd3';
+  d.innerHTML=[...sel.options].map(o=>`<button type="button" data-v="${esc(o.value)}" class="${o.value===sel.value&&o.value?'on':''}">${o.value?esc(o.textContent):'&nbsp;—&nbsp;'}</button>`).join('')+`<div class="hint">${esc(t('Hoặc Ctrl+V để dán · Ctrl+C để copy ô này','또는 Ctrl+V 붙여넣기 · Ctrl+C 복사'))}</div>`;
+  document.body.appendChild(d); const h=d.offsetHeight, below=innerHeight-r.bottom>h+8;
+  d.style.left=Math.min(r.left,innerWidth-d.offsetWidth-8)+'px'; d.style.top=(below?r.bottom+2:Math.max(8,r.top-h-2))+'px'; d.style.minWidth=r.width+'px';
+  d.addEventListener('mousedown',e=>{ e.preventDefault(); const b=e.target.closest('button'); if(!b) return; closeDD3();
+    if(sel.value!==b.dataset.v){ sel.value=b.dataset.v; sel.dispatchEvent(new Event('change',{bubbles:true})); } });
+  dd3=d; }
+document.addEventListener('mousedown',e=>{ if(dd3&&!e.target.closest('.dd3')&&!e.target.closest('#tbl3 .s3')) closeDD3(); },true);
+document.addEventListener('keydown',e=>{ if(dd3&&(e.key==='Escape'||e.key==='Tab'||e.key==='Enter')) closeDD3(); },true);
+addEventListener('scroll',()=>closeDD3(),true); addEventListener('resize',()=>closeDD3());
+T3.addEventListener('mousedown',e=>{ const s=e.target.closest('.s3'); if(!s||e.button!==0) return; e.preventDefault(); s.focus(); dd3Pend=dd3&&dd3.__s===s?null:s; closeDD3(); },true);
+document.addEventListener('mouseup',()=>{ const s=dd3Pend; dd3Pend=null; if(s&&!multi3()&&document.activeElement===s){ openDD3(s); dd3.__s=s; } });
 T3.addEventListener('mousedown',e=>{ const el=e.target.closest('.i3,.s3'); if(!el||e.button!==0) return; const p=pos3(el);
   if(e.shiftKey&&sel3){ e.preventDefault(); sel3.r1=p.r; sel3.c1=p.c; paint3(); return; }
   sel3={r0:p.r,c0:p.c,r1:p.r,c1:p.c}; drag3=true; paint3(); });
@@ -2595,7 +2615,7 @@ T3.addEventListener('paste',e=>{
   const text=(e.clipboardData||window.clipboardData).getData('text');
   const grid=/[\t\n]/.test(text.replace(/[\r\n]+$/,''));
   if(!grid&&!multi3()&&el.tagName!=='SELECT') return;           // 1 giá trị vào 1 ô chữ: để trình duyệt dán bình thường
-  e.preventDefault(); const g=rng3(), p=pos3(el);
+  e.preventDefault(); closeDD3(); const g=rng3(), p=pos3(el);
   paste3(text, g&&multi3()?g.r0:p.r, g&&multi3()?g.c0:p.c);
 });
 T3.addEventListener('click',async e=>{
