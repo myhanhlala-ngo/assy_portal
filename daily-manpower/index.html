@@ -496,6 +496,15 @@ body.ro .t3 input,body.ro .t3 select,body.ro .t3 .x3,body.ro .cur3{pointer-event
 .oc-lr{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .oc-h .oc-e{white-space:nowrap!important}
 .oc-h.peach{background:#f8cbad} .oc-h.gold{background:#ffe699} .oc-h.part{background:#d9e1f2} .oc-h.plain{background:#f2f4f8;font-size:13.5px}
+.oc-auto{cursor:help}
+.seg [data-v="xl"]{display:none!important}
+.org-editing .oc-auto{outline:1px dashed #9cc28a;outline-offset:1px}
+.hc-t td.lk{color:var(--auto,#2f6fd6);font-weight:700;background:#eef4ff}
+.hc-t td.lk.bad{background:#fde3e3;color:#b42318}
+.hc-t td.lk::after{content:'\1F517';font-size:9px;margin-left:3px;opacity:.55;vertical-align:super}
+.hc-h3 .hc-ed2{margin-left:auto;font-size:12px;padding:3px 10px}
+.hc-h3{display:flex;align-items:baseline;gap:6px}
+body.ro .hc-ed2{display:none!important}
 .oc-badge{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;background:#e2efda;border:1px solid #9cc28a;color:#1d5c2e;border-radius:10px;padding:0 7px;line-height:18px}
 .oc-p{display:flex;align-items:center;gap:9px;padding:6px 8px;min-height:62px}
 .oc-p+.oc-p{border-top:1px solid #d5dbe6}
@@ -2150,7 +2159,7 @@ $('aExcel').onclick=async()=>{
     w3.getCell(10,1).font={name:FONT,size:9,color:{argb:'FF5B6680'}};
   }
   // sheet: 조직도 — dựng lại Sơ đồ chuẩn bằng ô Excel (ô gộp, màu, viền, đường nối, ảnh)
-  try{ hcSheet(wb,FONT,fill); }catch(e){ console.warn('hc sheet',e); }
+  // 조립팀 인원 현황 + 조직도 gộp chung 1 sheet, bố cục như trên trang
   try{ await orgSheet(wb,FONT,fill); }catch(e){ console.warn('org sheet',e); }
   // sheet: 입사·퇴사 명단
   {
@@ -2614,12 +2623,12 @@ function orgBuildInto(root,live){
     if(c.bg||c.bl||c.bt||c.br||c.bb) h+=`<div class="og-b" style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;${c.bg?`background:#${c.bg};`:''}border-left:${bs(c.bl)};border-top:${bs(c.bt)};border-right:${bs(c.br)};border-bottom:${bs(c.bb)}"></div>`;
   }
   for(const c of M.cells){
-    const txt=ORG.t[c.id]!=null?ORG.t[c.id]:(c.t||'');
+    const av=orgAutoVal(c.id), txt=av!=null?String(av):ORG.t[c.id]!=null?ORG.t[c.id]:(c.t||'');
     if(!txt&&!(live&&orgEditing&&(c.bl||c.bt||c.br||c.bb))) continue;
     const ha=c.ha==='center'||c.ha==='centerContinuous'||c.ha==='fill'?'center':c.ha==='right'?'flex-end':'flex-start';
     const va=c.va==='top'?'flex-start':c.va==='center'||c.va==='distributed'||c.va==='justify'?'center':'flex-end';
     const chg=ORG.t[c.id]!=null&&ORG.t[c.id]!==(c.t||'');
-    h+=`<div class="og-t${chg?' chg':''}" data-id="${c.id}" ${live&&orgEditing?'contenteditable="plaintext-only" spellcheck="false"':''} style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;justify-content:${ha};align-items:${va};text-align:${ha==='center'?'center':ha==='flex-end'?'right':'left'};font-size:${c.fs||14.7}px;font-weight:${c.b?700:400};${c.i?'font-style:italic;':''}${c.fc?`color:#${c.fc};`:''}white-space:${c.wr?'pre-wrap':'pre'}">${esc(txt)}</div>`;
+    h+=`<div class="og-t${chg&&av==null?' chg':''}${av!=null?' oc-auto':''}" ${av!=null?`data-auto="1" title="${esc(t('Tự cộng từ các team bên dưới','하위 팀 자동 합계'))}"`:`data-id="${c.id}"`} ${live&&orgEditing&&av==null?'contenteditable="plaintext-only" spellcheck="false"':''} style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;justify-content:${ha};align-items:${va};text-align:${ha==='center'?'center':ha==='flex-end'?'right':'left'};font-size:${c.fs||14.7}px;font-weight:${c.b?700:400};${c.i?'font-style:italic;':''}${c.fc?`color:#${c.fc};`:''}white-space:${c.wr?'pre-wrap':'pre'}">${esc(txt)}</div>`;
   }
   M.imgs.forEach((im,k)=>{const src=ORG.img[k]||im.src;h+=`<img class="og-i${ORG.img[k]?' chg':''}" data-k="${k}" src="${src}" alt="${t('Ảnh nhân viên','직원 사진')}" draggable="false" style="left:${im.x}px;top:${im.y}px;width:${im.w}px;height:${im.h}px">`;});
   if(M.lines.length) h+=`<svg class="og-svg" width="${M.W}" height="${M.H}" aria-hidden="true"><defs><marker id="ogA${live?1:0}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#000"/></marker></defs>${M.lines.map(l=>`<line x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}" stroke="#000" stroke-width="${l.w+1}"${l.a?` marker-end="url(#ogA${live?1:0})"`:''}/>`).join('')}</svg>`;
@@ -2663,37 +2672,70 @@ function orgFitText(root){
   root.querySelectorAll('.og-t').forEach(el=>{ const f=ORG_FIT[el.dataset.id]; if(f) el.style.fontSize=f.toFixed(1)+'px'; });
 }
 // Sơ đồ chuẩn: cùng dữ liệu, mỗi trường trỏ tới ô Excel gốc (sửa ở kiểu nào cũng là sửa chung một chỗ)
-const ORG_TREE={title:'Q3',tone:'peach',ppl:[{role:'R4',name:'S4',img:1}],kids:[
- {title:'Q6',tone:'gold',ppl:[{role:'R7',name:'S7',img:0}],kids:[
-  {title:'E11',tone:'part',cnt:'G10',ppl:[{role:'F12',name:'G12',img:3}],kids:[
-    {cnt:'E14',ppl:[{role:'D15',name:'E15',img:8}],tbl:[['C17','E17'],['C18','E18'],['C19','E19'],['C20','E20'],['C21','E21']]},
-    {cnt:'J14',ppl:[{role:'I15',name:'J15',img:9}],tbl:[['H17','J17'],['H18','J18'],['H19','J19'],['H20','J20'],['H21','J21']]}]},
-  {title:'O11',tone:'part',cnt:'Q10',ppl:[{role:'P12',name:'Q12',img:4}],kids:[
-    {cnt:'O14',ppl:[{role:'N15',name:'O15',img:10}],tbl:[['M17','O17'],['M18','O18'],['M19','O19'],['M20','O20'],['M21','O21'],['M22','O22'],['M23','O23'],['M24','O24']]},
-    {cnt:'T14',ppl:[{role:'S15',name:'T15',img:11}],tbl:[['R17','T17'],['R18','T18'],['R19','T19'],['R20','T20']]}]},
-  {title:'AD11',tone:'part',cnt:'AF10',ppl:[{role:'AE12',name:'AF12',img:2}],kids:[
-    {ppl:[{role:'X15',name:'Y15',img:12}],tbl:[['W17','Y17']]},
-    {ppl:[{role:'AC15',name:'AD15',img:14}],tbl:[['AB17','AD17']]},
-    {ppl:[{role:'AH15',name:'AI15',img:13}],tbl:[['AG17','AI17']]},
-    {ppl:[{role:'AM15',name:'AN15',img:15}],tbl:[['AL17','AN17']]},
-    {title:'AQ15',tone:'plain',ppl:[{role:'AR16',name:'AS16',img:16}]}]},
-  {title:'AV11',tone:'part',cnt:'AX10',ppl:[{role:'AW12',name:'AX12',img:5},{role:'AW13',name:'AX13',img:6},{role:'AW14',name:'AX14',img:7}]}
+// Sơ đồ chuẩn bản 2026.11.18 — mã ô 'NB…' (chữ mặc định ở ORG_TXT2); ảnh dùng lại số ảnh cũ của đúng người
+const ORG_SHEET='조직도 2026.11.18';
+const ORG_TXT2={
+  NB1:'조립팀(주재원)',NB2:'팀장',NB3:'CHO KWANG EUM',
+  NB4:'현지인 부서장',NB5:'주임',NB6:'Nguyễn Cảnh Hùng',
+  NB10:'제조파트',NB11:'',NB12:'반장 (파트장)',NB13:'Nông Văn Nghị',
+  NB14:'',NB15:'제조 반장\n(3공장)',NB16:'Nguyễn Xuân Tấn',
+  NB17:'조장 / Tổ Trưởng',NB18:'6명',NB19:'입고 담당 / Input',NB20:'1명',NB21:'출고 담당 / Output',NB22:'2명',NB23:'부자재 담당 / Vật Tư',NB24:'3명',NB25:'직접 / Trực tiếp',NB26:'329명',
+  NB30:'품질파트',NB31:'',NB32:'반장 (파트장)',NB33:'Phạm Văn Tuấn',
+  NB34:'',NB35:'품질 조장',NB36:'Nguyễn Thanh Tuấn',
+  NB37:'IQC 담당',NB38:'1명',NB39:'OQC/IBI 담당',NB40:'2명',NB41:'Audit 담당',NB42:'1명',NB43:'대책서 담당',NB44:'1명',NB45:'RMA 담당',NB46:'1명',NB47:'투입전 불량',NB48:'1명',NB49:'Cải tiến',NB50:'2명',NB51:'직접 / Trực tiếp',NB52:'85명',
+  NB60:'기술파트',NB61:'',NB62:'(파트장)',NB63:'채용',
+  NB64:'Engineering 설비',NB65:'Nguyễn Văn Đón',NB66:'Engineering 설비',NB67:'Nông Văn Đông',NB68:'설비',NB69:'13명',
+  NB70:'Auto engineering 자동화',NB71:'Nguyễn Sỹ Tuấn',NB72:'Auto',NB73:'18명',
+  NB74:'신모델 셋업',NB75:'남창 JIG 교체',NB76:'Sầm Văn Tâm',
+  NB80:'운영파트',NB81:'',NB82:'주임(서무)',NB83:'Nguyễn Thị Tươi',NB84:'반장(ERP)/Data',NB85:'Trương Thị Mỹ Hạnh',NB86:'통역',NB87:'채용 중'
+};
+const ORG_TREE={title:'NB1',tone:'peach',ppl:[{role:'NB2',name:'NB3',img:1}],kids:[
+ {title:'NB4',tone:'gold',ppl:[{role:'NB5',name:'NB6',img:0}],kids:[
+  {title:'NB10',tone:'part',cnt:'NB11',ppl:[{role:'NB12',name:'NB13',img:9}],kids:[
+    {cnt:'NB14',ppl:[{role:'NB15',name:'NB16',img:8}],tbl:[['NB17','NB18'],['NB19','NB20'],['NB21','NB22'],['NB23','NB24'],['NB25','NB26']]}]},
+  {title:'NB30',tone:'part',cnt:'NB31',ppl:[{role:'NB32',name:'NB33',img:4}],kids:[
+    {cnt:'NB34',ppl:[{role:'NB35',name:'NB36',img:11}],tbl:[['NB37','NB38'],['NB39','NB40'],['NB41','NB42'],['NB43','NB44'],['NB45','NB46'],['NB47','NB48'],['NB49','NB50'],['NB51','NB52']]}]},
+  {title:'NB60',tone:'part',cnt:'NB61',ppl:[{role:'NB62',name:'NB63',img:null}],kids:[
+    {ppl:[{role:'NB64',name:'NB65',img:14},{role:'NB66',name:'NB67',img:12}],tbl:[['NB68','NB69']]},
+    {ppl:[{role:'NB70',name:'NB71',img:13}],tbl:[['NB72','NB73']]},
+    {title:'NB74',tone:'plain',ppl:[{role:'NB75',name:'NB76',img:16}]}]},
+  {title:'NB80',tone:'part',cnt:'NB81',ppl:[{role:'NB82',name:'NB83',img:5},{role:'NB84',name:'NB85',img:6},{role:'NB86',name:'NB87',img:null}]}
  ]}]};
-let ORG_VIEW='tree'; try{ORG_VIEW=localStorage.getItem('dailyhc.orgview')||'tree';}catch(e){}
+let ORG_VIEW='tree';
 let ORG_DIM={W:0,H:0};
 const ORG_TITLE={ZZ1:'SƠ ĐỒ TỔ CHỨC BỘ MÁY SẢN XUẤT',ZZ2:'조립부 조직표'};
-const ocBase=(id)=>{ if(ORG_TITLE[id]!=null) return ORG_TITLE[id]; const c=ORG_BASE.cells.find(x=>x.id===id);return c&&c.t?c.t:'';};
+const ocBase=(id)=>{ if(ORG_TITLE[id]!=null) return ORG_TITLE[id]; if(ORG_TXT2[id]!=null) return ORG_TXT2[id]; const c=ORG_BASE.cells.find(x=>x.id===id);return c&&c.t?c.t:'';};
 const TH=118;   // chiều cao dải tiêu đề
 function orgTitleHtml(W,live){
   const ed=live&&orgEditing?' contenteditable="plaintext-only" spellcheck="false"':'';
   const E=(id,cls)=>`<span class="oc-e ${cls}${ORG.t[id]!=null&&ORG.t[id].trim()!==ocBase(id).trim()?' chg':''}" data-id="${id}"${ed}>${esc(ocTxt(id))}</span>`;
   return `<div class="oc-title" style="width:${W}px;height:${TH}px">${E('ZZ1','t1')}${E('ZZ2','t2')}</div>`;
 }
-const ocTxt=(id)=>{const v=ORG.t[id]!=null?ORG.t[id]:ocBase(id);return String(v).replace(/^\s+|\s+$/g,'').replace(/\n\s+/g,'\n');};
+const ocRaw=(id)=>{const v=ORG.t[id]!=null?ORG.t[id]:ocBase(id);return String(v).replace(/^\s+|\s+$/g,'').replace(/\n\s+/g,'\n');};
+// ===== Tự cộng dồn: ô tổng từng part = người trong ô part + tổng các team con =====
+// team con có ô số (vd 7명) → lấy số đó; không có → cộng các dòng bảng (trừ dòng 직접/Trực tiếp); không có bảng → số người trong ô
+T_PATHS:{ const T=ORG_TREE; T._p='r2'; T.kids[0]._p='l2'; T.kids[0].kids.forEach((pt,pi)=>{pt._p='q'+pi; (pt.kids||[]).forEach((k,ki)=>{k._p='q'+pi+'k'+ki;});}); }
+const ocNum=(id)=>{ const m=/-?\d[\d,]*(\.\d+)?/.exec(ocRaw(id)||''); return m?+m[0].replace(/,/g,''):null; };
+const ocP=(n)=>ORG.s.ppl[n._p]||n.ppl, ocTB=(n)=>ORG.s.tbl[n._p]||n.tbl||[];
+const ocDir=(id)=>/직접|trực tiếp/i.test(ocRaw(id));
+const ORG_AUTO_IDS=new Set(ORG_TREE.kids[0].kids.flatMap(pt=>[pt.cnt,...(pt.kids||[]).map(k=>k.cnt)]).filter(Boolean));
+const ocHire=(p)=>/채용|tuyển|tuyen|hiring|^\s*-?\s*$/i.test(ocRaw(p.name)||'');
+const ocPN=(n)=>ocP(n).filter(p=>!ocHire(p)).length;
+function orgAuto(){
+  const T=ORG_TREE, L=T.kids[0];
+  const kidN=(k)=>ocPN(k)+ocTB(k).filter(r=>!ocDir(r[0])).reduce((a,r)=>a+(ocNum(r[1])||0),0);
+  const parts=L.kids.map(pt=>({id:pt.cnt,title:ocRaw(pt.title),n:ocPN(pt)+(pt.kids||[]).reduce((a,k)=>a+kidN(k),0),kids:(pt.kids||[]).map(k=>({id:k.cnt,n:kidN(k)}))}));
+  let dj=0; L.kids.forEach(pt=>(pt.kids||[]).forEach(k=>ocTB(k).forEach(r=>{ if(ocDir(r[0])) dj+=ocNum(r[1])||0; })));
+  const who=(n)=>{ const p=ocP(n)[0]; if(!p) return ''; const tt=ocRaw(n.title||''), m=/\(([^)]+)\)/.exec(tt), tag=m?m[1]:tt;
+    return [ocRaw(p.name),ocRaw(p.role)].filter(Boolean).join(' ')+(tag?` (${tag})`:''); };
+  return {parts,dj,top:ocPN(T),lead:ocPN(L),leadRole:ocRaw((ocP(L)[0]||{}).role||''),l1:who(T),l2:who(L)};
+}
+const orgAutoVal=(id)=>{ if(!ORG_AUTO_IDS.has(id)) return null; const A=orgAuto(); const p=A.parts.find(x=>x.id===id)||A.parts.flatMap(x=>x.kids).find(x=>x.id===id); return p?p.n:null; };
+const ocTxt=(id)=>{ const a=orgAutoVal(id); return a!=null?String(a):ocRaw(id); };
 function orgTreeInto(root,live){
   const T=ORG_TREE, CW=180, G=14, PG=30, PW=212;
   const ed=live&&orgEditing?' contenteditable="plaintext-only" spellcheck="false"':'';
-  const E=(id,cls)=>id?`<span class="oc-e ${cls}${ORG.t[id]!=null&&ORG.t[id].trim()!==ocBase(id).trim()?' chg':''}" data-id="${id}"${ed}>${esc(ocTxt(id))}</span>`:'';
+  const E=(id,cls)=>!id?'':ORG_AUTO_IDS.has(id)?`<span class="oc-e oc-auto ${cls}" data-auto="1" title="${esc(t('Tự cộng: số người trong ô + các dòng bảng bên dưới (trừ 직접) + các team con','자동 합계: 박스 인원 + 하위 표(직접 제외) + 하위 팀'))}">${esc(ocTxt(id))}</span>`:`<span class="oc-e ${cls}${ORG.t[id]!=null&&ORG.t[id].trim()!==ocBase(id).trim()?' chg':''}" data-id="${id}"${ed}>${esc(ocTxt(id))}</span>`;
   const EDIT=live&&orgEditing;
   const ph=(k)=>`<img class="oc-ph${ORG.img[k]?' chg':''}" data-k="${k}" src="${ORG.img[k]||(ORG_BASE.imgs[k]&&ORG_BASE.imgs[k].src)||OC_NOPHOTO}" alt="" draggable="false">`;
   // cấu trúc thực tế = bản gốc, hoặc bản đã thêm/xóa dòng (ORG.s) nếu có
@@ -2707,7 +2749,7 @@ function orgTreeInto(root,live){
   const GEO=[];
   const card=(n,x,y,w)=>{ const h=cardH(n); GEO.push({type:'card',n,x,y,w,h,leaf:leaf(n),ppl:P(n)}); html+=`<div class="oc" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">${head(n)}${P(n).map((p,i)=>person(n,p,i)).join('')}${EDIT?`<button class="oc-add" type="button" data-act="addp" data-p="${n._p}">＋ ${t('Thêm người','사람 추가')}</button>`:''}</div>`; return h; };
   // đường dẫn cố định cho từng thẻ (để lưu dòng thêm/xóa)
-  T._p='r'; T.kids[0]._p='l'; T.kids[0].kids.forEach((pt,pi)=>{pt._p='p'+pi; (pt.kids||[]).forEach((k,ki)=>{k._p='p'+pi+'k'+ki;});});
+  T._p='r2'; T.kids[0]._p='l2'; T.kids[0].kids.forEach((pt,pi)=>{pt._p='q'+pi; (pt.kids||[]).forEach((k,ki)=>{k._p='q'+pi+'k'+ki;});});
   // chiều rộng nhánh
   const parts=T.kids[0].kids;
   const pw=(pt)=>pt.kids?Math.max(PW,pt.kids.length*CW+(pt.kids.length-1)*G):PW;
@@ -2765,7 +2807,7 @@ function orgSetZoom(z,cx,cy){
 }
 function orgFit(){const v=$('orgView'),M=ORG_DIM; if(!M.W||!v.clientWidth) return; orgZ=null; orgSetZoom(Math.min((v.clientWidth-24)/M.W,(v.clientHeight-24)/M.H)); v.scrollLeft=0; v.scrollTop=0;}
 function orgShow(){
-  $('orgSrc').textContent=ORG_BASE.sheet?t('Theo file','원본')+': '+ORG_BASE.sheet:'';
+  $('orgSrc').textContent=t('Cập nhật','기준')+': '+ORG_SHEET;
   orgRefresh(); if(orgZ==null) requestAnimationFrame(orgFit); else orgSetZoom(orgZ);
 }
 async function saveOrg(now,all){
@@ -2862,7 +2904,7 @@ $('orgPng').onclick=async()=>{
     const canvas=await html2canvas(inner,{scale:ORG_VIEW==='tree'?2:1,backgroundColor:'#ffffff',useCORS:true,logging:false});
     host.remove();
     const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
-    const nm=(ORG_BASE.sheet||'so-do-to-chuc').replace(/[\\/:*?"<>|]+/g,' ').trim();
+    const nm=(ORG_SHEET||'so-do-to-chuc').replace(/[\\/:*?"<>|]+/g,' ').trim();
     await saveFile(`${nm}.png`,blob);
   }catch(e){toast(t('Không tạo được ảnh: ','이미지 생성 실패: ')+(e.message||e));}
   finally{b.disabled=false;}
@@ -2889,13 +2931,27 @@ function hcSan(o){ const S=(v,n)=>String(v==null?'':v).slice(0,n||120); const r=
   return r; }
 function hcGet(){ if(!ORG.s.hc) ORG.s.hc=hcSan(HC_DEF); return ORG.s.hc; }
 const hcSum=a=>a.reduce((p,v)=>p+(v||0),0);
+// Bản hiển thị: các ô liên kết lấy từ Sơ đồ chuẩn ② (chuyên gia, 직접직, tên lãnh đạo, số người từng part)
+function hcView(){
+  const H=hcGet(), V=JSON.parse(JSON.stringify(H)), LK={ex:0,dj:0,l1:0,l2:0,rows:{}};
+  let A=null; try{ A=orgAuto(); }catch(e){}
+  if(!A){ V.parts=H.rows.filter(r=>/파트|part|bộ phận/i.test(r.n)).map(r=>({title:r.n,n:r.c})); V.LK=LK; return V; }
+  if(A.top){ V.ex=A.top; LK.ex=1; }
+  if(A.dj){ V.g.dj=A.dj; LK.dj=1; }
+  if(A.l1){ V.l1=A.l1; LK.l1=1; } if(A.l2){ V.l2=A.l2; LK.l2=1; }
+  const nm=v=>String(v||'').replace(/\s+/g,'').toLowerCase();
+  V.rows.forEach((r,i)=>{ const p=A.parts.find(x=>nm(x.title)===nm(r.n));
+    if(p){ r.c=p.n; LK.rows[i]=1; } else if(A.leadRole&&nm(r.n)===nm(A.leadRole)){ r.c=A.lead; LK.rows[i]=1; } });
+  V.parts=A.parts; V.LK=LK; return V; }
 function hcCalc(H){ const tot=hcSum(HC_G.map(([k])=>H.g[k])); const se=[0,1,2,3].map(j=>hcSum(H.rows.map(r=>r.e[j]))); const sc=hcSum(H.rows.map(r=>r.c));
-  const bad=H.rows.map(r=>r.e.some(v=>v!=null)&&r.c!=null&&hcSum(r.e)!==r.c); return {tot,se,sc,bad,parts:H.rows.map((r,i)=>({r,i})).filter(o=>/파트|part|bộ phận/i.test(o.r.n))}; }
+  const bad=H.rows.map(r=>r.e.some(v=>v!=null)&&r.c!=null&&hcSum(r.e)!==r.c); return {tot,se,sc,bad,parts:(H.parts||[]).map((p,i)=>({r:{n:p.title,c:p.n},i}))}; }
 const hcF=v=>v==null||v===''?'':(+v).toLocaleString('en-US');
 function hcRender(){
-  const el=$('hcBody'); if(!el) return; const H=hcGet(), E=hcEditing, K=hcCalc(H);
+  const el=$('hcBody'); if(!el) return; const H=hcView(), E=hcEditing, K=hcCalc(H), LK=H.LK;
+  const LKT=esc(t('Tự lấy từ Sơ đồ tổ chức bên dưới — sửa ở sơ đồ','아래 조직도에서 자동 연결 — 조직도에서 수정'));
+  const lcell=(v,cls,extra)=>`<td class="${cls||''} lk" title="${LKT}"${extra||''}>${esc(typeof v==='number'?hcF(v):(v||''))}</td>`;
   const cell=(k,v,cls)=>E?`<td class="${cls||''} ed" contenteditable="plaintext-only" spellcheck="false" data-k="${k}">${esc(v==null?'':String(v))}</td>`:`<td class="${cls||''}">${esc(typeof v==='number'?hcF(v):(v||''))}</td>`;
-  const lead=(k,v)=>`<div class="hc-lead${E?' ed':''}" ${E?`contenteditable="plaintext-only" spellcheck="false" data-k="${k}"`:''}>${esc(v||'')}</div>`;
+  const lead=(k,v)=>LK[k]?`<div class="hc-lead lk" title="${LKT}">${esc(v||'')}</div>`:`<div class="hc-lead${E?' ed':''}" ${E?`contenteditable="plaintext-only" spellcheck="false" data-k="${k}"`:''}>${esc(v||'')}</div>`;
   let h=`<div class="hc-title"><u>조립팀 인원 현황</u><small class="vi">Hiện trạng nhân lực tổ lắp ráp</small></div>`;
   // ① sơ đồ thu gọn lên đầu
   const org=`<div class="hc-org">${lead('l1',H.l1)}${lead('l2',H.l2)}${K.parts.length?`<div class="hc-vl"></div><div class="hc-parts">${K.parts.map(o=>`<div class="hc-p"><div class="hc-pb"><b>${esc(o.r.n)}</b><span data-a="p${o.i}">${hcF(o.r.c)}명</span></div></div>`).join('')}</div>`:''}</div>`;
@@ -2904,15 +2960,15 @@ function hcRender(){
     <tr><th rowspan="2">구분<small class="vi">Hạng mục</small></th><th rowspan="2">주재원<small>(${esc(H.exn||'')})</small></th>
     <th colspan="8">현지인 (총 <span data-a="tot">${hcF(K.tot)}</span>명)<small class="vi">Người Việt (tổng <span data-a="tot2">${hcF(K.tot)}</span> người)</small></th><th rowspan="2">비고<small class="vi">Ghi chú</small></th></tr>
     <tr>${HC_G.map(([,ko,vi])=>`<th class="s">${ko}<small class="vi">${vi}</small></th>`).join('')}<th class="s">TOTAL</th></tr></thead>
-    <tbody><tr><td class="l">인원수<small class="vi" style="display:block;font-weight:500;color:var(--muted);font-size:11px">Số người</small></td>${cell('ex',H.ex)}${HC_G.map(([k])=>cell('g.'+k,H.g[k])).join('')}<td class="a" data-a="tot3">${hcF(K.tot)}</td>${cell('note',H.note,'w')}</tr>
+    <tbody><tr><td class="l">인원수<small class="vi" style="display:block;font-weight:500;color:var(--muted);font-size:11px">Số người</small></td>${LK.ex?lcell(H.ex):cell('ex',H.ex)}${HC_G.map(([k])=>k==='dj'&&LK.dj?lcell(H.g[k]):cell('g.'+k,H.g[k])).join('')}<td class="a" data-a="tot3">${hcF(K.tot)}</td>${cell('note',H.note,'w')}</tr>
     ${E?`<tr><td class="l" style="font-weight:500;color:var(--muted)">주재원 이름</td>${cell('exn',H.exn)}<td colspan="9" class="w" style="color:var(--muted)">← Tên chuyên gia hiển thị trên tiêu đề cột · 열 제목에 표시</td></tr>`:''}</tbody></table></div></div>`;
-  const t2=`<div class="hc-col"><h3 class="hc-h3">2. 인원 경력 현황<span class="vi">Thâm niên nhân lực</span></h3><div class="hc-wrap"><table class="hc-t"><thead>
+  const t2=`<div class="hc-col"><h3 class="hc-h3">2. 인원 경력 현황<span class="vi">Thâm niên nhân lực</span><button class="btn hc-ed2" type="button" data-hcedit="1" aria-pressed="${E}">${E?t('✓ Xong','✓ 완료'):t('✎ Sửa tay','✎ 직접 수정')}</button></h3><div class="hc-wrap"><table class="hc-t"><thead>
     <tr><th rowspan="2" style="width:15%">구분<small class="vi">Bộ phận</small></th><th rowspan="2" style="width:10%">인원수<small class="vi">Số người</small></th><th colspan="4">경력<small class="vi">Thâm niên</small></th><th rowspan="2">주요 업무 내용<small class="vi">Nội dung công việc chính</small></th></tr>
     <tr>${HC_E.map(([ko,vi])=>`<th class="s" style="width:9%">${ko}<small class="vi">${vi}</small></th>`).join('')}</tr></thead><tbody>
-    ${H.rows.map((r,i)=>`<tr>${E?`<td class="l ed" contenteditable="plaintext-only" spellcheck="false" data-k="r.${i}.n">${esc(r.n)}</td>`:`<td class="l">${esc(r.n)}</td>`}${cell(`r.${i}.c`,r.c,K.bad[i]?'bad':'').replace('<td ',`<td data-c="${i}" ${K.bad[i]?`title="${esc('Số người ≠ tổng thâm niên ('+hcSum(r.e)+') · 인원수 ≠ 경력 합계')}"`:''} `)}${r.e.map((v,j)=>cell(`r.${i}.e.${j}`,v)).join('')}${cell(`r.${i}.w`,r.w,'w')}</tr>`).join('')}
+    ${H.rows.map((r,i)=>`<tr>${E?`<td class="l ed" contenteditable="plaintext-only" spellcheck="false" data-k="r.${i}.n">${esc(r.n)}</td>`:`<td class="l">${esc(r.n)}</td>`}${(LK.rows[i]?lcell(r.c,K.bad[i]?'bad':'',` data-c="${i}"`):cell(`r.${i}.c`,r.c,K.bad[i]?'bad':'').replace('<td ',`<td data-c="${i}" `)).replace('<td ',`<td ${K.bad[i]&&!LK.rows[i]?`title="${esc('Số người ≠ tổng thâm niên ('+hcSum(r.e)+') · 인원수 ≠ 경력 합계')}"`:''} `)}${r.e.map((v,j)=>cell(`r.${i}.e.${j}`,v)).join('')}${cell(`r.${i}.w`,r.w,'w')}</tr>`).join('')}
     <tr class="sum"><td class="l">합 계<small class="vi" style="display:block;font-weight:500;font-size:11px">Tổng</small></td><td data-a="sc">${hcF(K.sc)}</td>${K.se.map((v,j)=>`<td data-a="se${j}">${hcF(v)}</td>`).join('')}<td></td></tr></tbody></table></div></div>`;
   h+=`<div class="hc-row"><div class="hc-col hc-left">${org}${t1}</div>${t2}</div>`;
-  if(E) h+=`<div class="hc-note"><span class="vi">Bấm vào ô để sửa · Enter / Tab để sang ô kế tiếp · tên bộ phận có chữ "파트" sẽ hiện thành ô trong sơ đồ · xóa trắng cả dòng để xóa dòng. Ô đỏ = số người khác tổng thâm niên.</span><span class="ko">셀 클릭 수정 · Enter / Tab 다음 칸 · "파트"가 들어간 구분은 조직 박스로 표시 · 행 전체를 비우면 삭제. 빨간 칸 = 인원수 ≠ 경력 합계.</span></div>`;
+  if(E) h+=`<div class="hc-note"><span class="vi">Bấm vào ô để sửa · Enter / Tab để sang ô kế tiếp · ô xanh 🔗 tự lấy từ Sơ đồ tổ chức bên dưới (sửa ở sơ đồ) · xóa trắng cả dòng để xóa dòng. Ô đỏ = số người khác tổng thâm niên.</span><span class="ko">셀 클릭 수정 · Enter / Tab 다음 칸 · 파란 칸 🔗 은 아래 조직도에서 자동 연결 (조직도에서 수정) · 행 전체를 비우면 삭제. 빨간 칸 = 인원수 ≠ 경력 합계.</span></div>`;
   el.innerHTML=h;
   $('hcEdit').setAttribute('aria-pressed',E); $('hcAdd').hidden=!E; $('hcReset').hidden=!E;
 }
@@ -2921,9 +2977,10 @@ function hcSet(k,txt){ const H=hcGet(), p=k.split('.'); txt=String(txt).replace(
   else if(p[0]==='ex') H.ex=hcNum(txt);
   else if(p[0]==='r'){ const r=H.rows[+p[1]]; if(!r) return; if(p[2]==='e') r.e[+p[3]]=hcNum(txt); else if(p[2]==='c') r.c=hcNum(txt); else r[p[2]]=txt.slice(0,p[2]==='w'?200:60); }
   else H[p[0]]=txt.slice(0,120); }
-function hcLive(){ const H=hcGet(), K=hcCalc(H), el=$('hcBody'); const set=(a,v)=>{const n=el.querySelector(`[data-a="${a}"]`); if(n) n.textContent=v;};
+function hcLive(){ const H=hcView(), K=hcCalc(H), el=$('hcBody'); const set=(a,v)=>{const n=el.querySelector(`[data-a="${a}"]`); if(n) n.textContent=v;};
   set('tot',hcF(K.tot)); set('tot2',hcF(K.tot)); set('tot3',hcF(K.tot)); set('sc',hcF(K.sc)); K.se.forEach((v,j)=>set('se'+j,hcF(v)));
   K.parts.forEach(o=>set('p'+o.i,hcF(o.r.c)+'명')); el.querySelectorAll('[data-c]').forEach(n=>n.classList.toggle('bad',!!K.bad[+n.dataset.c])); }
+function hcToggleEdit(){ hcEditing=!hcEditing; hcRender(); if(!hcEditing) saveOrg(true); toast(hcEditing?t('Đang sửa bảng hiện trạng nhân lực — bấm vào ô để sửa','인원 현황 편집 중 — 셀 클릭 수정'):t('Đã lưu bảng hiện trạng nhân lực','인원 현황 저장 완료'),1800); }
 (()=>{ const el=$('hcBody'); if(!el) return;
   el.addEventListener('input',e=>{ const c=e.target.closest('[data-k]'); if(!c) return; hcSet(c.dataset.k,c.textContent); hcLive(); saveOrg(); });
   el.addEventListener('focusout',e=>{ const c=e.target.closest('[data-k]'); if(!c) return;
@@ -2932,7 +2989,12 @@ function hcLive(){ const H=hcGet(), K=hcCalc(H), el=$('hcBody'); const set=(a,v)
   el.addEventListener('keydown',e=>{ const c=e.target.closest('[data-k]'); if(!c) return;
     if(e.key==='Enter'||e.key==='Tab'){ e.preventDefault(); const all=[...el.querySelectorAll('[data-k]')]; const i=all.indexOf(c); const nx=all[i+(e.shiftKey?-1:1)]; if(nx){ nx.focus(); const r=document.createRange(); r.selectNodeContents(nx); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} else c.blur(); }
     else if(e.key==='Escape') c.blur(); });
-  $('hcEdit').onclick=()=>{ hcEditing=!hcEditing; hcRender(); if(!hcEditing) saveOrg(true); toast(hcEditing?t('Đang sửa bảng hiện trạng nhân lực','인원 현황 편집 중'):t('Đã lưu bảng hiện trạng nhân lực','인원 현황 저장 완료'),1800); };
+  $('hcEdit').onclick=hcToggleEdit;
+  el.addEventListener('click',e=>{ if(e.target.closest('[data-hcedit]')){ e.preventDefault(); hcToggleEdit(); } });
+  // nhấp đúp vào ô bảng thâm niên khi chưa bật sửa → bật sửa và đặt con trỏ vào ô đó
+  el.addEventListener('dblclick',e=>{ if(hcEditing||document.body.classList.contains('ro')) return; const td=e.target.closest('.hc-t td'); if(!td||td.classList.contains('lk')) return;
+    const tr=td.closest('tr'), ci=[...tr.children].indexOf(td), ri=[...tr.parentNode.children].indexOf(tr), tb=[...el.querySelectorAll('.hc-t')].indexOf(td.closest('.hc-t'));
+    hcToggleEdit(); const t2=el.querySelectorAll('.hc-t')[tb]; const c=t2&&t2.tBodies[0].rows[ri]&&t2.tBodies[0].rows[ri].children[ci]; if(c&&c.dataset.k){ c.focus(); const r=document.createRange(); r.selectNodeContents(c); getSelection().removeAllRanges(); getSelection().addRange(r);} });
   $('hcAdd').onclick=()=>{ const H=hcGet(); H.rows.push({n:'새 파트',c:null,e:[null,null,null,null],w:''}); hcRender(); saveOrg(true); const n=el.querySelector(`[data-k="r.${H.rows.length-1}.n"]`); if(n){n.focus(); const r=document.createRange(); r.selectNodeContents(n); getSelection().removeAllRanges(); getSelection().addRange(r);} };
   $('hcReset').onclick=async()=>{ const ok=await modal({title:t('Về số liệu mẫu?','기본값으로 복원할까요?'),body:`<p>${t('Bảng hiện trạng nhân lực sẽ quay về số liệu theo file mẫu (525 người).','인원 현황표를 기본 양식 수치(525명)로 되돌립니다.')}</p>`,ok:t('Khôi phục','복원'),cancel:t('Hủy','취소'),danger:true}); if(!ok) return; ORG.s.hc=hcSan(HC_DEF); hcRender(); saveOrg(true); };
   hcRender();
@@ -2980,12 +3042,62 @@ function hcSheet(wb,FONT,fill){
   box(S,19,S,23,'',{f:'FFF4F6FA'}); ws.getRow(S).height=26;
   for(let c=13;c<=23;c++){ const x=ws.getCell(S,c); x.border=Object.assign({},x.border,{top:tk}); }
 }
+// Excel: khối 조립팀 인원 현황 đặt phía trên sơ đồ, cùng một lưới ô (toạ độ px âm = phía trên tiêu đề sơ đồ)
+function hcXlGeo(W){
+  const H=hcView(), K=hcCalc(H), R=[], LN=[], M=20, GAP=28;
+  const wl=(W-2*M-GAP)*0.5, xl0=M, xl1=M+wl, xr0=xl1+GAP, xr1=W-M;
+  const cols=(x0,x1,wt)=>{ const s=wt.reduce((a,b)=>a+b,0); const o=[x0]; let acc=x0; wt.forEach(w=>{acc+=(x1-x0)*w/s; o.push(Math.round(acc));}); o[o.length-1]=x1; return o; };
+  const add=(x1,y1,x2,y2,v,st,key)=>R.push({x1:Math.round(x1),y1:Math.round(y1),x2:Math.round(x2),y2:Math.round(y2),v,st:st||{},key});
+  const NV='FF0D2C5A', SUB='FFD9E1F2', WH='FFFFFFFF', LKC='FFEEF4FF';
+  const hd={b:true,bg:NV,fc:WH,h:'center',bd:1}, sb={b:true,bg:SUB,h:'center',bd:1}, td={h:'center',bd:1}, nf='#,##0';
+  const rt=(ko,vi,dark)=>({rich:[ko,vi],dark});
+  add(M,0,W-M,52,'조립팀 인원 현황',{h:'center',sz:22,b:true,u:true});
+  // ① sơ đồ thu gọn (trái)
+  const cx=(xl0+xl1)/2;
+  add(cx-180,68,cx+180,104,H.l1||'',{b:true,bg:NV,fc:WH,h:'center',bd:1,sz:11});
+  add(cx-180,104,cx+180,140,H.l2||'',{b:true,bg:NV,fc:WH,h:'center',bd:1,sz:11});
+  const P=H.parts||[], n=P.length;
+  if(n){ const pw=Math.min(190,(wl-(n-1)*20)/n), tot=n*pw+(n-1)*20, st=cx-tot/2, cs=P.map((_,i)=>st+i*(pw+20)+pw/2);
+    LN.push([cx,140,cx,158]); if(n>1) LN.push([cs[0],158,cs[n-1],158]); cs.forEach(c=>LN.push([c,158,c,176]));
+    P.forEach((p,i)=>{ add(cs[i]-pw/2,176,cs[i]+pw/2,210,p.title,{b:true,bg:NV,fc:WH,h:'center',bd:1}); add(cs[i]-pw/2,210,cs[i]+pw/2,248,p.n,{b:true,h:'center',bd:1,sz:12,fmt:'#,##0"명"'},'part'+i); }); }
+  // bảng 1. 인원 (trái)
+  const c1=cols(xl0,xl1,[1.05,1.05,1.2,1.1,1.1,1.1,1.1,1.1,1.1,1,1.05]), y=[266,294,340,392,436];
+  add(xl0,y[0],xl1,y[1],'1. 인원  Nhân lực',{b:true,sz:12,h:'left'});
+  add(c1[0],y[1],c1[1],y[3],rt('구분','Hạng mục'),hd); add(c1[1],y[1],c1[2],y[3],rt('주재원',`(${H.exn||''})`),hd);
+  add(c1[2],y[1],c1[10],y[2],{f:'hdr'},hd,'hdr'); add(c1[10],y[1],c1[11],y[3],rt('비고','Ghi chú'),hd);
+  HC_G.forEach(([k,ko,vi],i)=>{ add(c1[2+i],y[2],c1[3+i],y[3],rt(ko,vi,1),sb); add(c1[2+i],y[3],c1[3+i],y[4],H.g[k],Object.assign({},td,{fmt:nf},k==='dj'&&H.LK.dj?{bg:LKC,fc:'FF2F6FD6',b:true}:{}),'g'+i); });
+  add(c1[9],y[2],c1[10],y[3],'TOTAL',sb);
+  add(c1[0],y[3],c1[1],y[4],rt('인원수','Số người',1),{b:true,h:'left',bd:1,indent:1});
+  add(c1[1],y[3],c1[2],y[4],H.ex,Object.assign({},td,{fmt:nf},H.LK.ex?{bg:LKC,fc:'FF2F6FD6',b:true}:{}));
+  add(c1[9],y[3],c1[10],y[4],{f:'tot',r:K.tot},{b:true,h:'center',bd:1,fc:'FF2F6FD6',fmt:nf},'tot'); add(c1[10],y[3],c1[11],y[4],H.note||'',{h:'left',bd:1});
+  // bảng 2. 인원 경력 현황 (phải)
+  const c2=cols(xr0,xr1,[15,10,9,9,9,9,39]), z0=68, z1=96, z2=142, z3=188, RH=42;
+  add(xr0,z0,xr1,z1,'2. 인원 경력 현황  Thâm niên nhân lực',{b:true,sz:12,h:'left'});
+  add(c2[0],z1,c2[1],z3,rt('구분','Bộ phận'),hd); add(c2[1],z1,c2[2],z3,rt('인원수','Số người'),hd); add(c2[2],z1,c2[6],z2,rt('경력','Thâm niên'),hd); add(c2[6],z1,c2[7],z3,rt('주요 업무 내용','Nội dung công việc chính'),hd);
+  HC_E.forEach(([ko,vi],j)=>add(c2[2+j],z2,c2[3+j],z3,rt(ko,vi,1),sb));
+  H.rows.forEach((r,i)=>{ const a=z3+i*RH, b=a+RH, lk=H.LK.rows[i];
+    add(c2[0],a,c2[1],b,r.n,{b:true,h:'left',bd:1,indent:1});
+    add(c2[1],a,c2[2],b,r.c,Object.assign({},td,{fmt:nf},lk?{bg:LKC,fc:'FF2F6FD6',b:true}:{}),'c'+i);
+    r.e.forEach((v,j)=>add(c2[2+j],a,c2[3+j],b,v,Object.assign({},td,{fmt:nf}),'e'+i+'_'+j));
+    add(c2[6],a,c2[7],b,r.w,{h:'left',bd:1,indent:1}); });
+  const sy=z3+H.rows.length*RH, sb2={b:true,bg:'FFF4F6FA',bd:1,h:'center',top2:1};
+  add(c2[0],sy,c2[1],sy+RH,rt('합 계','Tổng',1),Object.assign({},sb2,{h:'left',indent:1}));
+  add(c2[1],sy,c2[2],sy+RH,{f:'sc',r:K.sc},Object.assign({},sb2,{fmt:nf}));
+  [0,1,2,3].forEach(j=>add(c2[2+j],sy,c2[3+j],sy+RH,{f:'se'+j,r:K.se[j]},Object.assign({},sb2,{fmt:nf})));
+  add(c2[6],sy,c2[7],sy+RH,'',sb2);
+  const bottom=Math.max(y[4],sy+RH)+40;
+  return {R,LN,H,K,h:bottom};
+}
 async function orgSheet(wb,FONT,fill){
   const host=document.createElement('div'), wasEdit=orgEditing; orgEditing=false;
   const L=orgTreeInto(host,false); orgEditing=wasEdit;
   const {W,H,GEO,lines}=L, CW=180;
+  let HB=null; try{ HB=hcXlGeo(Math.max(W,1900)); }catch(e){ console.warn('hc block',e); }
+  const OFF=HB?-HB.h:0;
+  if(HB){ HB.R.forEach(r=>{r.y1+=OFF; r.y2+=OFF;}); HB.LN.forEach(l=>{ l[1]+=OFF; l[3]+=OFF; lines.push(l); }); }
   // 1) lưới: mọi mép thẻ / bảng / đường nối thành ranh giới cột – dòng
   const xs=new Set([0,W]), ys=new Set([0,TH*0.55,TH,H]);
+  if(HB){ ys.add(OFF); HB.R.forEach(r=>{ xs.add(r.x1); xs.add(r.x2); ys.add(r.y1); ys.add(r.y2); }); }
   GEO.forEach(g=>{ xs.add(g.x); xs.add(g.x+g.w); ys.add(g.y);
     if(g.type==='card'){ xs.add(g.x+63); xs.add(g.x+8); xs.add(g.x+54); let yy=g.y; if(g.n.title||g.leaf){yy+=31; ys.add(yy);} g.ppl.forEach(()=>{ys.add(yy+4); ys.add(yy+59); yy+=63; ys.add(yy);}); ys.add(g.y+g.h); }
     else { xs.add(g.x+g.w-54); g.rows.forEach((_,i)=>ys.add(g.y+24*(i+1))); } });
@@ -2994,7 +3106,7 @@ async function orgSheet(wb,FONT,fill){
   const X=snap(xs), Y=snap(ys);
   const ci=(x)=>{x=Math.round(x); let b=0; X.forEach((v,i)=>{if(Math.abs(v-x)<=2)b=i;}); return b;};     // chỉ số ranh giới gần nhất
   const ri=(y)=>{y=Math.round(y); let b=0; Y.forEach((v,i)=>{if(Math.abs(v-y)<=2)b=i;}); return b;};
-  const ws=wb.addWorksheet('조직도',{views:[{showGridLines:false,zoomScale:70}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1,paperSize:9,horizontalCentered:true,margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}}});
+  const ws=wb.addWorksheet('조립팀 인원 현황·조직도',{views:[{showGridLines:false,zoomScale:70}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1,paperSize:9,horizontalCentered:true,margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}}});
   for(let i=0;i<X.length-1;i++) ws.getColumn(i+1).width=Math.max(0.25,(X[i+1]-X[i])/7.2);
   for(let j=0;j<Y.length-1;j++) ws.getRow(j+1).height=Math.max(2,(Y[j+1]-Y[j])*0.75);
   const INK='FF3B4A63', med={style:'medium',color:{argb:INK}}, thin={style:'thin',color:{argb:'FFD5DBE6'}}, ln={style:'medium',color:{argb:INK}};
@@ -3011,8 +3123,7 @@ async function orgSheet(wb,FONT,fill){
     return [r1,c1,r2,c2]; };
   const txt=(id)=>ocTxt(id).replace(/\n/g,' ');
   // 2) tiêu đề
-  put(0,0,W,TH*0.55,ocTxt('ZZ1'),{h:'center',sz:24,b:true,fc:'FF000000'});
-  ws.getCell(1,1).font={name:'Times New Roman',size:24,bold:true};
+  { const a0=put(0,0,W,TH*0.55,ocTxt('ZZ1'),{h:'center',sz:24,b:true,fc:'FF000000'}); if(a0) ws.getCell(a0[0],a0[1]).font={name:'Times New Roman',size:24,bold:true}; }
   put(0,TH*0.55,W,TH,ocTxt('ZZ2'),{h:'center',sz:20,b:true,fc:'FF000000'});
   // 3) thẻ và bảng
   const imgs=[];
@@ -3045,6 +3156,36 @@ async function orgSheet(wb,FONT,fill){
       box(ri(g.y)+1,ci(g.x)+1,ri(g.y+24*g.rows.length),ci(g.x+g.w));
     }
   });
+  // 3b) khối 조립팀 인원 현황 phía trên
+  if(HB){
+    const tb={style:'thin',color:{argb:'FF3A4660'}}, tk={style:'medium',color:{argb:'FF172033'}}, AD={};
+    const edge=(a,top2)=>{ for(let r=a[0];r<=a[2];r++) for(let c=a[1];c<=a[3];c++){ const cl=ws.getCell(r,c), b=Object.assign({},cl.border||{});
+        if(r===a[0]) b.top=top2?tk:tb; if(r===a[2]) b.bottom=tb; if(c===a[1]) b.left=tb; if(c===a[3]) b.right=tb; cl.border=b; } };
+    const later=[];
+    HB.R.forEach(r=>{ const st=r.st; let v=r.v;
+      if(v&&v.rich){ const [ko,vi]=v.rich, dk=v.dark||!st.fc||st.fc!=='FFFFFFFF';
+        v={richText:[{text:ko,font:{name:FONT,size:st.sz||10,bold:!!st.b,color:{argb:st.fc||'FF172033'}}}].concat(vi?[{text:'\n'+vi,font:{name:FONT,size:8.5,color:{argb:st.fc==='FFFFFFFF'?'FFC9D5EE':'FF5B6680'}}}]:[])}; }
+      const isF=v&&typeof v==='object'&&v.f;
+      const a=put(r.x1,r.y1,r.x2,r.y2,isF?null:(v==null?null:v),{h:st.h||'center',sz:st.sz,b:st.b,fc:st.fc,bg:st.bg,indent:st.indent});
+      if(!a) return; const cl=ws.getCell(a[0],a[1]);
+      if(st.u) cl.font=Object.assign({},cl.font,{underline:true});
+      if(st.fmt) cl.numFmt=st.fmt;
+      if(st.bd) edge(a,st.top2);
+      if(r.key) AD[r.key]=cl.address;
+      if(isF) later.push([cl,v]); });
+    const G=HC_G.map((_,i)=>AD['g'+i]).filter(Boolean), tot=HB.K.tot;
+    later.forEach(([cl,v])=>{
+      if(v.f==='tot') cl.value={formula:`SUM(${G.join(',')})`,result:tot};
+      else if(v.f==='hdr'){ const T=AD.tot; cl.value={formula:`"현지인 (총 "&TEXT(${T},"#,##0")&"명)"&CHAR(10)&"Người Việt (tổng "&TEXT(${T},"#,##0")&" người)"`,result:`현지인 (총 ${tot}명)\nNgười Việt (tổng ${tot} người)`}; }
+      else if(v.f==='sc') cl.value={formula:`SUM(${HB.H.rows.map((_,i)=>AD['c'+i]).filter(Boolean).join(',')||'0'})`,result:v.r};
+      else if(/^se\d$/.test(v.f)){ const j=+v.f.slice(2); cl.value={formula:`SUM(${HB.H.rows.map((_,i)=>AD['e'+i+'_'+j]).filter(Boolean).join(',')||'0'})`,result:v.r}; } });
+    // ô số người part trong sơ đồ thu gọn = ô 인원수 tương ứng ở bảng 2
+    const nm=s=>String(s||'').replace(/\s+/g,'').toLowerCase();
+    (HB.H.parts||[]).forEach((p,i)=>{ const ri2=HB.H.rows.findIndex(r=>nm(r.n)===nm(p.title)); const ad=AD['part'+i]; if(ad&&ri2>=0&&AD['c'+ri2]) ws.getCell(ad).value={formula:AD['c'+ri2],result:p.n}; });
+    // ô đỏ khi 인원수 ≠ tổng thâm niên
+    HB.H.rows.forEach((_,i)=>{ const c=AD['c'+i], E=[0,1,2,3].map(j=>AD['e'+i+'_'+j]).filter(Boolean); if(!c||!E.length) return;
+      ws.addConditionalFormatting({ref:c,rules:[{type:'expression',formulae:[`AND(COUNT(${E.join(',')})>0,${c}<>SUM(${E.join(',')}))`],style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FFFDE3E3'}},font:{color:{argb:'FFB42318'}}}}]}); });
+  }
   // 4) đường nối: viền ô dọc / ngang
   lines.forEach(([x1,y1,x2,y2])=>{
     if(Math.abs(x1-x2)<1){ const c=ci(x1)+1; for(let r=ri(Math.min(y1,y2))+1;r<=ri(Math.max(y1,y2));r++){ const cl=ws.getCell(r,c); cl.border=Object.assign({},cl.border,{left:ln}); } }
