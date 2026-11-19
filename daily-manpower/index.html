@@ -334,6 +334,15 @@ table.t3{min-width:1240px;font-size:12.5px;table-layout:fixed}
 .t3 tr.kmat select.s3[data-f="kind"]{color:#b45309;font-weight:600}
 .t3 tr.kret select.s3[data-f="kind"]{color:#0f766e;font-weight:600}
 .t3 tr.kmv select.s3[data-f="kind"]{color:#6d28d9;font-weight:600}
+.t3 td.ck,.t3 th.ck{text-align:center;padding:0}.t3 td.ck input,.t3 th.ck input{width:15px;height:15px;cursor:pointer;accent-color:#1f3a8a;margin:0}
+.t3 tr.ck-on td{background:#e8effc!important}
+.t3 th .fb3{all:unset;position:absolute;right:3px;bottom:4px;font-size:9px;line-height:1;padding:3px 4px;border-radius:4px;cursor:pointer;color:#c9d5ee;border:1px solid rgba(255,255,255,.25)}
+.t3 th .fb3:hover{background:rgba(255,255,255,.15);color:#fff}.t3 th .fb3.on{background:#f5b301;color:#1b2440;border-color:#f5b301}
+.bar3{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:3px 8px;border-radius:8px;background:#eef3fb;font-size:13px}.bar3[hidden]{display:none}.bar3 .btn{padding:3px 10px;font-size:12.5px}
+.fl3{position:fixed;z-index:9999;background:var(--surface,#fff);border:1px solid #c9d2e3;border-radius:8px;box-shadow:0 10px 28px rgba(15,30,60,.18);display:grid;width:260px;padding:8px;gap:6px}.fl3 .fl3q{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #c9d2e3;border-radius:6px;font:inherit;font-size:13px}
+.fl3 label{display:flex;align-items:center;gap:6px;font-size:13px;padding:3px 4px;border-radius:4px;cursor:pointer}.fl3 label:hover{background:#eef3fb}.fl3 label small{color:#6b7690}
+.fl3 .fl3l{max-height:240px;overflow:auto;border-top:1px solid #e3e8f0;border-bottom:1px solid #e3e8f0;padding:3px 0}.fl3 .fl3a{border-radius:4px}
+.fl3 .fl3b{display:flex;justify-content:flex-end;gap:6px}.fl3 .fl3b .btn{padding:4px 12px;font-size:12.5px}
 .dd3{position:fixed;z-index:9999;background:var(--surface,#fff);border:1px solid #c9d2e3;border-radius:8px;box-shadow:0 10px 28px rgba(15,30,60,.18);padding:4px;display:grid;gap:1px;max-height:320px;overflow:auto}
 .dd3 button{all:unset;cursor:pointer;padding:7px 12px;border-radius:5px;font-size:13.5px;white-space:nowrap;color:var(--ink,#172033)}
 .dd3 button:hover{background:#eef3fb}.dd3 button.on{background:#1f3a8a;color:#fff}
@@ -733,7 +742,7 @@ td.v.hcm{box-shadow:inset 0 0 0 2px var(--edit-line)}
             <button class="btn primary" id="add3" type="button"><span class="vi">＋ Thêm dòng</span><span class="ko">＋ 행 추가</span></button>
             <button class="btn" id="sort3" type="button"><span class="vi">Sắp xếp theo ngày</span><span class="ko">일자순 정렬</span></button>
             <button class="btn" id="fill3" type="button" title="Ctrl+D"><span class="vi">⤓ Điền xuống (Ctrl+D)</span><span class="ko">⤓ 아래로 채우기 (Ctrl+D)</span></button>
-            <span class="range-lbl" id="cnt3">84 / 84 người · 84 / 84명</span>
+            <span class="range-lbl" id="cnt3">84 / 84 người · 84 / 84명</span><span id="bar3" class="bar3" hidden></span>
           </div>
           <div class="note"><span class="vi">Ngày dạng 28/10/2026 · kéo chuột / Shift + click / Shift + mũi tên để chọn vùng · <b>Điền xuống</b>: chọn từ dòng mẫu xuống các dòng cần điền rồi bấm Ctrl+D (hoặc đứng ở 1 ô bấm Ctrl+D = lấy ô ngay trên) · copy 1 hay nhiều dòng rồi chọn vùng dài hơn bấm Ctrl+V = dán lặp lại cho cả vùng · Ctrl+C / Ctrl+X / Ctrl+V nhiều dòng × cột (dán đè dòng có sẵn, thừa tự thêm dòng) · Delete xóa vùng · Ctrl+Z hoàn tác · × xóa dòng</span><span class="ko">일자 28/10/2026 · 드래그 / Shift+클릭 / Shift+방향키 영역 선택 · <b>아래로 채우기</b>: 기준 행부터 범위 선택 후 Ctrl+D (한 칸이면 바로 위 칸 복사) · 복사 후 더 긴 범위에 Ctrl+V = 반복 붙여넣기 · Ctrl+C/X/V 여러 행·열 · Delete 영역 삭제 · Ctrl+Z 실행 취소 · × 행 삭제</span></div>
         </div>
@@ -2406,6 +2415,47 @@ async function saveStaff(now){
   if(now) return go(); staffTimer=setTimeout(go,600);
 }
 function staffMonths(){const s2=new Set(STAFF.map(r=>(r.date||'').slice(0,7)).filter(Boolean));if(cur)s2.add(cur);return [...s2].sort();}
+/* ===== Nút chọn: ô tích chọn dòng (☐) + nút lọc ▼ ở tiêu đề cột ===== */
+let LIST3=[]; const CHK3=new Set(), FIL3={};
+const val3=(r,f)=>{ const v=r[f]; if(f==='date') return v?dmy(v):''; if(OPTS[f]) return v||''; return String(v||'').trim(); };
+const lbl3=(f,v)=>v===''?t('(Trống)','(빈 칸)'):OPTS[f]?t(...(OPTS[f].find(a=>a[0]===v)||[0,v,v]).slice(1)):v;
+function bar3(){ const b=$('bar3'); if(!b) return; const n=CHK3.size, nf=Object.keys(FIL3).length;
+  if(!n&&!nf){ b.hidden=true; b.innerHTML=''; return; } b.hidden=false;
+  b.innerHTML=(n?`<b>${esc(t(`Đã chọn ${n} dòng`,`${n}행 선택`))}</b><button type="button" class="btn" data-b3="copy">${esc(t('⧉ Copy','⧉ 복사'))}</button><button type="button" class="btn" data-b3="del" style="color:#b42318">${esc(t('🗑 Xóa','🗑 삭제'))}</button><button type="button" class="btn" data-b3="none">${esc(t('Bỏ chọn','선택 해제'))}</button>`:'')
+    +(nf?`<button type="button" class="btn" data-b3="unf">${esc(t(`✕ Bỏ lọc (${nf} cột)`,`✕ 필터 해제 (${nf})`))}</button>`:''); }
+function tsvRows3(rows){ return rows.map(r=>F3.map(f=>{ const v=f==='date'?dmy(r.date):OPTS[f]?lab3(OPTS[f],r[f]):r[f]; return String(v||'').replace(/[\t\n]/g,' '); }).join('\t')).join('\n'); }
+async function bar3Act(a){
+  const sel=STAFF.filter(r=>CHK3.has(r));
+  if(a==='none'){ CHK3.clear(); build3(); return; }
+  if(a==='unf'){ for(const k in FIL3) delete FIL3[k]; build3(); return; }
+  if(a==='copy'){ const txt=tsvRows3(sel); try{ await navigator.clipboard.writeText(txt); }catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    toast(t(`Đã copy ${sel.length} dòng — bấm vào ô Ngày của dòng trống rồi Ctrl+V để dán`,`${sel.length}행 복사 — 빈 행의 일자 칸에서 Ctrl+V`),3500); return; }
+  if(a==='del'){ const ok=await modal({title:t(`Xóa ${sel.length} dòng đã chọn?`,`선택한 ${sel.length}행을 삭제할까요?`),body:`<p>${sel.slice(0,8).map(r=>esc((r.name||'')+' · '+dmy(r.date))).join('<br>')}${sel.length>8?'<br>…':''}</p>`,ok:t('Xóa','삭제'),cancel:t('Hủy','취소'),danger:true});
+    if(!ok) return; snap3(); for(let i=STAFF.length-1;i>=0;i--) if(CHK3.has(STAFF[i])) STAFF.splice(i,1); CHK3.clear(); saveStaff(); build3(); toast(t(`Đã xóa ${sel.length} dòng (Ctrl+Z để hoàn tác)`,`${sel.length}행 삭제 (Ctrl+Z 취소)`)); }
+}
+let fl3=null;
+function closeFL3(){ if(fl3){ fl3.remove(); fl3=null; } }
+function openFL3(btn){ closeFL3(); const f=btn.dataset.ff, cnt=new Map();
+  LIST3.forEach(o=>{ const v=val3(o.r,f); cnt.set(v,(cnt.get(v)||0)+1); });
+  let vals=[...cnt.keys()]; vals.sort((a,b)=>f==='date'?(a.split('/').reverse().join('')).localeCompare(b.split('/').reverse().join('')):lbl3(f,a).localeCompare(lbl3(f,b),'vi'));
+  if(vals.includes('')) vals=vals.filter(v=>v!=='').concat(['']);
+  const cur=FIL3[f], d=document.createElement('div'); d.className='fl3';
+  d.innerHTML=`<input type="search" class="fl3q" placeholder="${esc(t('Tìm…','검색…'))}"><label class="fl3a"><input type="checkbox" data-all="1" ${!cur?'checked':''}> <b>${esc(t('(Chọn tất cả)','(전체 선택)'))}</b></label>
+    <div class="fl3l">${vals.map(v=>`<label data-t="${esc(norm(lbl3(f,v)))}"><input type="checkbox" value="${esc(v)}" ${!cur||cur.has(v)?'checked':''}> ${esc(lbl3(f,v))} <small>(${cnt.get(v)})</small></label>`).join('')}</div>
+    <div class="fl3b"><button type="button" class="btn" data-fa="clr">${esc(t('Bỏ lọc','해제'))}</button><button type="button" class="btn primary" data-fa="ok">OK</button></div>`;
+  document.body.appendChild(d); const r=btn.getBoundingClientRect();
+  d.style.top=(r.bottom+4)+'px'; d.style.left=Math.max(8,Math.min(r.right-d.offsetWidth,innerWidth-d.offsetWidth-8))+'px';
+  const boxes=()=>[...d.querySelectorAll('.fl3l input')];
+  d.querySelector('.fl3q').oninput=e=>{ const q=norm(e.target.value); d.querySelectorAll('.fl3l label').forEach(l=>l.hidden=!!q&&!l.dataset.t.includes(q)); };
+  d.querySelector('[data-all]').onchange=e=>{ boxes().forEach(b=>{ if(!b.closest('label').hidden) b.checked=e.target.checked; }); };
+  d.addEventListener('click',e=>{ const a=e.target.closest('[data-fa]'); if(!a) return;
+    if(a.dataset.fa==='clr') delete FIL3[f];
+    else { const on=boxes().filter(b=>b.checked&&!b.closest('label').hidden).map(b=>b.value); if(on.length===vals.length) delete FIL3[f]; else FIL3[f]=new Set(on); }
+    closeFL3(); build3(); });
+  d.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); d.querySelector('[data-fa="ok"]').click(); } if(e.key==='Escape') closeFL3(); });
+  fl3=d; setTimeout(()=>d.querySelector('.fl3q').focus(),0); }
+addEventListener('scroll',e=>{ if(fl3&&!fl3.contains(e.target)) closeFL3(); },true);
+document.addEventListener('mousedown',e=>{ if(fl3&&!e.target.closest('.fl3')&&!e.target.closest('.fb3')) closeFL3(); },true);
 function build3(){ try{closeDD3();}catch(e){}
   const T=$('tbl3'); if(!T) return;
 
@@ -2414,16 +2464,25 @@ function build3(){ try{closeDD3();}catch(e){}
   fs.innerHTML=`<option value="month">${t('Tháng đang chọn','선택한 달')}${cur?` (${+cur.slice(5)}/${cur.slice(0,4)})`:''}</option><option value="all">${t('Tất cả','전체')}</option>`+ms.map(m=>`<option value="${m}">${+m.slice(5)}/${m.slice(0,4)}</option>`).join('');
   fs.value=staffFilter;
   const ym=staffFilter==='month'?cur:staffFilter==='all'?null:staffFilter;
-  const list=STAFF.map((r,ix)=>({r,ix})).filter(o=>!ym||(o.r.date||'').slice(0,7)===ym||!o.r.date);
+  const base=STAFF.map((r,ix)=>({r,ix})).filter(o=>!ym||(o.r.date||'').slice(0,7)===ym||!o.r.date);
+  LIST3=base;   // danh sách gốc của tháng (để nút lọc liệt kê giá trị)
+  const list=base.filter(o=>F3.every(f=>!FIL3[f]||FIL3[f].has(val3(o.r,f))));
+  [...CHK3].forEach(r=>{ if(!STAFF.includes(r)) CHK3.delete(r); });
   $('cnt3').textContent=t(`${list.length} / ${STAFF.length} người`,`${list.length} / ${STAFF.length}명`);
-  const H=[['Ngày','일자',92],['Mã NV','사번',76],['Họ tên','성명',170],['Phòng ban','부서',170],['Loại CNV','직원 구분',120],['Loại biến động','구분',120],['Lý do','사유',300],['Ghi chú','비고',170],['','',34]];
-  let h=`<colgroup>${H.map(x=>`<col style="width:${x[2]}px">`).join('')}</colgroup><thead><tr>${H.map(x=>`<th>${x[0]?`<span class="vi">${x[0]}</span><small class="ko" style="display:block;font-weight:500">${x[1]}</small>`:''}</th>`).join('')}</tr></thead><tbody>`;
+  const allOn=list.length&&list.every(o=>CHK3.has(o.r));
+  const H=[['☐','',30],['Ngày','일자',92],['Mã NV','사번',76],['Họ tên','성명',170],['Phòng ban','부서',170],['Loại CNV','직원 구분',120],['Loại biến động','구분',120],['Lý do','사유',300],['Ghi chú','비고',170],['','',34]];
+  let h=`<colgroup>${H.map(x=>`<col style="width:${x[2]}px">`).join('')}</colgroup><thead><tr>${H.map((x,i)=>{
+      if(i===0) return `<th class="ck"><input type="checkbox" class="ck3all" ${allOn?'checked':''} title="${esc(t('Chọn tất cả dòng đang hiện','표시된 행 전체 선택'))}"></th>`;
+      const f=F3[i-1], fb=f?`<button type="button" class="fb3${FIL3[f]?' on':''}" data-ff="${f}" title="${esc(t('Lọc','필터'))}">▼</button>`:'';
+      return `<th>${x[0]?`<span class="vi">${x[0]}</span><small class="ko" style="display:block;font-weight:500">${x[1]}</small>`:''}${fb}</th>`; }).join('')}</tr></thead><tbody>`;
   const sel=(f,v,x)=>`<select class="s3" data-f="${f}" data-x="${x}" aria-label="${f}"><option value=""></option>${OPTS[f].map(a=>`<option value="${a[0]}"${a[0]===v?' selected':''}>${esc(t(a[1],a[2]))}</option>`).join('')}</select>`;
   const inp=(f,v,x,c='',ph='')=>`<input class="i3 ${c}" data-f="${f}" data-x="${x}" value="${esc(v||'')}" placeholder="${ph}" autocomplete="off" spellcheck="false" aria-label="${f}">`;
-  const row=(r,x,blank)=>`<tr class="${blank?'blank':r.kind==='in'?'kin':r.kind==='out'?'kout':r.kind==='mat'?'kmat':r.kind==='ret'?'kret':r.kind==='mv'?'kmv':''}"><td>${inp('date',dmy(r.date),x,'c',blank?'dd/mm/yyyy':'')}</td><td>${inp('emp',r.emp,x,'c')}</td><td>${inp('name',r.name,x)}</td><td>${sel('dept',r.dept,x)}</td><td>${sel('type',r.type,x)}</td><td>${sel('kind',r.kind,x)}</td><td>${inp('reason',r.reason,x)}</td><td>${inp('note',r.note,x)}</td><td>${blank?'':`<button class="x3" type="button" data-x="${x}" aria-label="${t('Xóa dòng','행 삭제')}">×</button>`}</td></tr>`;
+  const row=(r,x,blank)=>`<tr class="${blank?'blank':r.kind==='in'?'kin':r.kind==='out'?'kout':r.kind==='mat'?'kmat':r.kind==='ret'?'kret':r.kind==='mv'?'kmv':''}" data-k="${x}"><td class="ck">${blank?'':`<input type="checkbox" class="ck3" data-k="${x}"${CHK3.has(r)?' checked':''}>`}</td><td>${inp('date',dmy(r.date),x,'c',blank?'dd/mm/yyyy':'')}</td><td>${inp('emp',r.emp,x,'c')}</td><td>${inp('name',r.name,x)}</td><td>${sel('dept',r.dept,x)}</td><td>${sel('type',r.type,x)}</td><td>${sel('kind',r.kind,x)}</td><td>${inp('reason',r.reason,x)}</td><td>${inp('note',r.note,x)}</td><td>${blank?'':`<button class="x3" type="button" data-x="${x}" aria-label="${t('Xóa dòng','행 삭제')}">×</button>`}</td></tr>`;
   list.forEach(({r,ix})=>{h+=row(r,ix,false);});
   for(let k=0;k<8;k++) h+=row({},'new'+k,true);
   T.innerHTML=h+'</tbody>';
+  T.querySelectorAll('tbody tr').forEach(tr=>{ const k=tr.dataset.k; if(k&&!k.startsWith('new')&&CHK3.has(STAFF[+k])) tr.classList.add('ck-on'); });
+  bar3();
   sum3(ym); try{paint3();}catch(e){}
 }
 let SUM3_YM=null;
@@ -2624,6 +2683,12 @@ T3.addEventListener('click',async e=>{
   if(!ok) return; STAFF.splice(+b.dataset.x,1); saveStaff(); build3(); toast(t('Đã xóa 1 dòng','1행 삭제됨'));
 });
 T3.addEventListener('focusout',()=>{ if(staffDirty) setTimeout(()=>{ if(!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#tbl3'))){staffDirty=false;render();} },50); });
+T3.addEventListener('click',e=>{ const fb=e.target.closest('.fb3'); if(fb){ e.preventDefault(); if(fl3&&fl3.__b===fb.dataset.ff){ closeFL3(); return; } openFL3(fb); fl3.__b=fb.dataset.ff; } });
+T3.addEventListener('change',e=>{
+  if(e.target.matches('.ck3')){ const r=STAFF[+e.target.dataset.k]; if(!r) return; e.target.checked?CHK3.add(r):CHK3.delete(r); e.target.closest('tr').classList.toggle('ck-on',e.target.checked);
+    const all=T3.querySelector('.ck3all'), cs=[...T3.querySelectorAll('.ck3')]; if(all) all.checked=cs.length&&cs.every(c=>c.checked); bar3(); e.stopPropagation(); }
+  else if(e.target.matches('.ck3all')){ T3.querySelectorAll('.ck3').forEach(c=>{ const r=STAFF[+c.dataset.k]; c.checked=e.target.checked; if(r) e.target.checked?CHK3.add(r):CHK3.delete(r); c.closest('tr').classList.toggle('ck-on',c.checked); }); bar3(); e.stopPropagation(); } },true);
+$('bar3').addEventListener('click',e=>{ const b=e.target.closest('[data-b3]'); if(b) bar3Act(b.dataset.b3); });
 $('f3').onchange=e=>{staffFilter=e.target.value;try{localStorage.setItem('dailyhc.f3',staffFilter);}catch(er){}build3();};
 $('add3').onclick=()=>{
   const pad2=(n)=>String(n).padStart(2,'0'), now=new Date(), today=now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
