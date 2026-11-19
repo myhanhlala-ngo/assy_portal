@@ -153,7 +153,8 @@ h1{font-size:21px; margin:9px 0 3px; letter-spacing:-.4px}
 .kpi.alarm2 .v{color:#c2410c}
 
 /* ===== 본문 2단 ===== */
-.cols{display:grid; grid-template-columns:1.9fr 1fr; gap:18px; align-items:start}
+.cols{display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr); gap:18px; align-items:start}
+.cols>section{min-width:0}   /* bảng A rộng tự cuộn ngang trong cột của nó, bảng B không bị đẩy ra ngoài khung */
 .sec-h{display:flex; align-items:baseline; gap:8px; margin-bottom:7px}
 .sec-h h2{font-size:13.5px; margin:0}
 .sec-h span{font-size:10.5px; color:var(--sub)}
