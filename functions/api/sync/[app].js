@@ -6,7 +6,7 @@
 // Quyền: dùng chung mật khẩu của báo cáo nhân lực (HC_PASSWORD = sửa, HC_VIEW_PASSWORD = chỉ xem).
 //   Xem: công khai. Ghi: cần đăng nhập quyền sửa (nếu chưa đặt mật khẩu nào thì ai có link cũng ghi được).
 
-const APPS = new Set(["daily-plan-defect", "loss-cost", "material-ng-loss", "quality", "revenue-manpower"]);
+const APPS = new Set(["daily-plan-defect", "loss-cost", "material-ng-loss", "quality", "revenue-manpower", "assy-kpi"]);
 const MAX_ITEMS = 25;               // mỗi lần POST (trình duyệt tự chia nhỏ)
 const MAX_BYTES = 1900000;          // D1: tối đa ~2MB / dòng
 const KEEP_HISTORY = 400;           // số bản lịch sử giữ lại cho mỗi ứng dụng

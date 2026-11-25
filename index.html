@@ -221,6 +221,7 @@ const I={
  factory:'<path d="M3 20V10l5 3V10l5 3V6h4l1 6h3v8z"/><path d="M7 17h2M12 17h2M17 17h1"/>',
  shield:'<path d="M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
  bars:'<path d="M5 20V12M10 20V6M15 20v-9M20 20V4M3 20h18"/>',
+ gauge:'<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.4"/>',
  ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
 };
@@ -232,6 +233,7 @@ const GROUPS=[
  {id:'qa',cls:'g-qa',vi:'CHẤT LƯỢNG',kr:'품질',dvi:'Chất lượng, chi phí lỗi và khách hàng',dkr:'품질 · 실패비용 · 고객 불량'}
 ];
 const apps={
+ 'assy-kpi':{g:'prod',code:'KPI-00',icon:'gauge',vi:'Các chỉ số chính',kr:'조립 주요 지표',url:'/assy-kpi/',dvi:'KPI chính theo tháng: kế hoạch / thực tế, chất lượng, chi phí thất bại, nhân lực.',dkr:'월별 주요 지표 · 계획/실적 · 품질 · 실패비용 · 인력'},
  'daily-plan-defect':{g:'prod',code:'PRD-01',icon:'calendar',vi:'Kế hoạch & lỗi',kr:'생산 계획 및 불량',url:'/daily-plan-defect/',dvi:'Kế hoạch hằng ngày và tỷ lệ NG theo nhóm SP / công đoạn.',dkr:'일일 생산계획 및 제품군·공정별 불량율'},
  'production-ops-plan':{g:'prod',code:'PRD-02',icon:'factory',vi:'Kế hoạch vận hành',kr:'생산 운영 계획',url:'/production-ops-plan/',dvi:'Kế hoạch vận hành sản xuất và nhu cầu nhân lực theo ngày.',dkr:'일일 생산 운영 계획 및 인력 소요'},
  'material-ng-loss':{g:'prod',code:'PRD-03',icon:'box',vi:'Tổn thất vật tư NG',kr:'자재 불량 손실',url:'/material-ng-loss/',dvi:'Theo dõi Loss Auto / RW / đầu vào theo model và vật tư.',dkr:'모델·자재별 자동/RW/입고 불량 손실'},
