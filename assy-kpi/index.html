@@ -803,11 +803,11 @@ function kpiAggregate(XLSX, sheets) {
       if (r.indexOf('투입수') >= 0 && r.indexOf('양품수량') >= 0 && r.indexOf('RMA불량') >= 0) { hi = i; h = r; break; }
     }
     if (hi < 0) return;
-    var cy = { d: h.indexOf('날짜'), in: h.indexOf('투입수'), g: h.indexOf('양품수량'), rw: h.indexOf('재작업수량'), self: h.indexOf('자공정불량'), post: h.indexOf('후공정불량'), rma: h.indexOf('RMA불량'), fn: h.indexOf('기능불량') };
+    var cy = { d: h.indexOf('날짜'), in: h.indexOf('투입수'), g: h.indexOf('양품수량'), rw: h.indexOf('재작업수량'), self: h.indexOf('자공정불량'), post: h.indexOf('후공정불량'), rma: h.indexOf('RMA불량'), fn: h.indexOf('기능불량'), pg: h.indexOf('생산양품량') };
     for (var j = hi + 1; j < rows.length; j++) {
       var r2 = rows[j]; if (!r2) continue; var ym2 = toYM(r2[cy.d]); if (!ym2) continue;
       var dy = toDay(r2[cy.d]); if (dy && (!out.meta.lastDayY || dy > out.meta.lastDayY)) out.meta.lastDayY = dy;
-      add(out.months, ym2, 'yIn', n(r2[cy.in])); add(out.months, ym2, 'yGood', n(r2[cy.g]));
+      add(out.months, ym2, 'yIn', n(r2[cy.in])); add(out.months, ym2, 'yGood', n(r2[cy.g])); if (cy.pg >= 0) add(out.months, ym2, 'yProd', n(r2[cy.pg]));
       if (cy.rw >= 0) add(out.months, ym2, 'yRw', n(r2[cy.rw]));
       add(out.months, ym2, 'ySelf', n(r2[cy.self])); if (cy.post >= 0) add(out.months, ym2, 'yPost', n(r2[cy.post]));
       add(out.months, ym2, 'yRma', n(r2[cy.rma])); if (cy.fn >= 0) add(out.months, ym2, 'yFn', n(r2[cy.fn]));
@@ -907,7 +907,7 @@ function div(a,b,k){ return (a==null||b==null||!b)?null:a/b*(k||1); }
 */
 var SECTIONS = [
  { id:'qty', vi:'Sản lượng', ko:'생산량', unit:'단위: 개 (차트: 천개) · Đơn vị: cái (biểu đồ: nghìn)', grp:['Sản lượng','생산량'],
-   rows:[ {id:'plan',vi:'Kế hoạch',ko:'계획',kind:'hybrid',dec:0},
+   rows:[ {id:'plan',vi:'Kế hoạch (input)',ko:'계획 (투입)',kind:'hybrid',dec:0},
           {id:'act',vi:'Thực tế',ko:'실적',kind:'hybrid',dec:0,main:1},
           {id:'rate',vi:'% đạt',ko:'달성률',kind:'calc',dec:1,rate:1} ] },
  { id:'val', vi:'Giá trị sản xuất', ko:'생산금액', unit:'단위: 백만원 (원본 VND ÷ {FX}) · Đơn vị: triệu KRW (VND gốc ÷ {FX})', grp:['Giá trị SX','생산금액'],
@@ -979,8 +979,9 @@ function cmp(v){ return [v,'calc']; }
 function computeAll(){
   C = {};
   var q = C.qty = {};
-  setRow(q,'qty','plan',function(i){ return hyb('qty','plan',D(i,'planQty'),i); });
-  setRow(q,'qty','act', function(i){ return hyb('qty','act',D(i,'actQty'),i); });
+  var yOK=function(i){ return D(i,'yIn')!=null && D(i,'yProd')!=null; };   // có bảng hiệu suất 수율상세현황 (PZ403QA30) cho tháng đó
+  setRow(q,'qty','plan',function(i){ return hyb('qty','plan',yOK(i)?D(i,'yIn'):D(i,'planQty'),i); });       // kế hoạch = 투입수
+  setRow(q,'qty','act', function(i){ return hyb('qty','act',yOK(i)?D(i,'yProd'):D(i,'actQty'),i); });      // thực tế = 생산양품량
   setRow(q,'qty','rate',function(i){ return cmp(div(q.act.v[i],q.plan.v[i],100)); });
   q.plan.cum=sumArr(pick(q.plan.v)); q.act.cum=sumArr(pick(q.act.v)); q.rate.cum=div(q.act.cum,q.plan.cum,100);
 
@@ -1858,7 +1859,7 @@ document.getElementById('fXls').onchange = function(e){
     var agg = kpiAggregate(XLSX, sheets);
     if (!agg.meta.hasA && !agg.meta.hasB && !agg.meta.hasF && !agg.meta.hasY){ toast(L('Không nhận ra file. Cần file 생산일보 재료비 (PZ034QA31), 생산계획 (P4810QA40) Chi phí thiệt hại (실패비용) hoặc 수율상세현황 (PZ403QA30).','파일을 인식하지 못했습니다.')); return; }
     var old = S.data.months||{}, om = S.data.meta||{};
-    var GROUPS = { A:['aProdQty','aGoodQty','aValue','aMat'], B:['planQty','actQty','defQty','planValue','actValueB','defCost'], F:['fcBase','fcTotal','fcSelf','fcPost','fcUser','fcDis','fcRework','fcEtc','fcFx','fcProc','fcSales'], Y:['yIn','yGood','yRw','ySelf','yPost','yRma','yFn'] };
+    var GROUPS = { A:['aProdQty','aGoodQty','aValue','aMat'], B:['planQty','actQty','defQty','planValue','actValueB','defCost'], F:['fcBase','fcTotal','fcSelf','fcPost','fcUser','fcDis','fcRework','fcEtc','fcFx','fcProc','fcSales'], Y:['yIn','yProd','yGood','yRw','ySelf','yPost','yRma','yFn'] };
     if (!agg.meta.hasA && agg.meta.hasB){ toast(L('Lưu ý: giá trị SX cần cả file đơn giá (PZ034QA31) — hãy nạp cùng lúc.','생산금액 산출에는 단가 파일(PZ034QA31)이 함께 필요합니다.')); }
     // month-level merge: a group present in the new files only replaces the months those files contain
     ['A','B','F','Y'].forEach(function(g){
