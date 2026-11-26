@@ -663,7 +663,7 @@ td.v.hcm{box-shadow:inset 0 0 0 2px var(--edit-line)}
     <section class="card">
       <div class="card-h">
         <div class="sec-h" style="margin:0"><h2><span class="vi">Bảng nhân lực theo ngày</span><span class="ko sub2">일별 인원현황표</span></h2><span>명</span></div>
-        <div class="note"><span class="vi">Cột <b>합계</b>: số người = TB các ngày có dữ liệu (bỏ Thứ 7, CN, lễ, ngày trống) · biến động = so với ngày làm trước (cột 합계: ngày cuối − ngày đầu) · vào/nghỉ việc đếm từ tab Nhân lực vào/nghỉ việc · mục ② (gạch chấm) tự động từ mục ①, chỉ TO nhập tay</span><span class="ko"><b>합계</b>: 인원 = 데이터 입력일 평균 (토요일·일요일·공휴일·미입력일 제외) · 증감 = 전 근무일 대비 (합계: 마지막일 − 첫날) · 입사/퇴사는 입사·퇴사 명단에서 집계 · ②(점선)는 ①에서 자동, TO만 수기 입력</span></div>
+        <div class="note"><span class="vi">Cột <b>합계</b>: số người = TB các ngày có dữ liệu (bỏ Thứ 7, CN, lễ, ngày trống, ngày đi làm < 150 người) · biến động = so với ngày làm trước (cột 합계: ngày cuối − ngày đầu) · vào/nghỉ việc đếm từ tab Nhân lực vào/nghỉ việc · mục ② (gạch chấm) tự động từ mục ①, chỉ TO nhập tay</span><span class="ko"><b>합계</b>: 인원 = 데이터 입력일 평균 (토요일·일요일·공휴일·미입력일·출근 150명 미만일 제외) · 증감 = 전 근무일 대비 (합계: 마지막일 − 첫날) · 입사/퇴사는 입사·퇴사 명단에서 집계 · ②(점선)는 ①에서 자동, TO만 수기 입력</span></div>
       </div>
       <div class="editbar" id="editbar" hidden="">
         <b><span class="vi">Đang sửa tay</span><span class="ko">수기 수정 중</span></b>
@@ -1246,7 +1246,8 @@ const inRange=(i)=>i>=from&&i<=end;
 const work=()=>days().map((_,i)=>i).filter(i=>inRange(i)&&S.isWork[i]);
 
 const isSat=(i)=>{const d=days()[i];return !!d&&parseD(d.date).getDay()===6;};
-const avgW=()=>work().filter(i=>!isSat(i));
+const AVG_MIN=150;   // ngày có tổng đi làm < 150 người (làm thêm ít người, ngày lễ…) không tính vào trung bình
+const avgW=()=>work().filter(i=>!isSat(i)&&!(S.tot[i]!=null&&S.tot[i]<AVG_MIN));
 
 const L=(vi,ko)=>`<span class="vi">${vi}</span><span class="ko">${ko}</span>`;
 const t=(vi,ko)=>LANG==='vi'?vi:LANG==='ko'?ko:`${vi} · ${ko}`;
@@ -1358,7 +1359,7 @@ function buildGrid(T,RR){
     return;
   }
   let last=end; for(let i=end;i>=from;i--) if(S.isWork[i]){last=i;break;}
-  let h=`<thead><tr><th class="k1 fz1">${L('Nhóm','구분')}</th><th class="k1 fz2">&nbsp;</th><th class="fz3">${L('Hạng mục','항목')}</th><th class="sum fz4">합계<small>${L('TB bỏ T7','토요일 제외')}</small></th>`;
+  let h=`<thead><tr><th class="k1 fz1">${L('Nhóm','구분')}</th><th class="k1 fz2">&nbsp;</th><th class="fz3">${L('Hạng mục','항목')}</th><th class="sum fz4">합계<small>${L('TB bỏ T7 · <150 người','토요일·150명 미만 제외')}</small></th>`;
   ds.forEach((d,i)=>{const w=parseD(d.date).getDay();
     h+=`<th class="day ${d.off==='sun'||(!d.off&&w===0)?'sun':d.off==='hol'?'hol':w===6?'sat':''} ${i===last?'latest':''} ${inRange(i)?'':'hide'}" data-i="${i}" ${editMode?'title="Bấm để đổi ngày làm việc / nghỉ"':''}>${d.off==='hol'?'★ ':''}${L(VN[w],KS[w])}<small>${ddmm(d.date)}</small></th>`;});
   h+='</tr></thead><tbody>';
@@ -1975,8 +1976,8 @@ $('aExcel').onclick=async()=>{
   t2.value=NOTE;
   t2.font={name:FONT,size:9,color:{argb:C.muted}};
   // row 3: hệ số tính trung bình (1 = tính, 0 = Thứ 7) — sửa được trong Excel
-  ws.getCell(3,3).value=t('Tính vào TB (1 = có, 0 = Thứ 7)','평균 포함 (1=포함, 0=토요일)'); ws.getCell(3,3).font={name:FONT,size:8.5,color:{argb:C.muted}}; ws.getCell(3,3).alignment={horizontal:'right'};
-  ds.forEach((d,i)=>{const c=ws.getCell(3,D0+i+1);c.value=parseD(d.date).getDay()===6?0:1;c.font={name:FONT,size:8.5,color:{argb:C.muted}};c.alignment={horizontal:'center'};});
+  ws.getCell(3,3).value=t('Tính vào TB (1 = có, 0 = Thứ 7 / đi làm <150)','평균 포함 (1=포함, 0=토요일·150명 미만)'); ws.getCell(3,3).font={name:FONT,size:8.5,color:{argb:C.muted}}; ws.getCell(3,3).alignment={horizontal:'right'};
+  ds.forEach((d,i)=>{const c=ws.getCell(3,D0+i+1);c.value=parseD(d.date).getDay()===6||(Sx.tot[i]!=null&&Sx.tot[i]<AVG_MIN)?0:1;c.font={name:FONT,size:8.5,color:{argb:C.muted}};c.alignment={horizontal:'center'};});
   const MK=`$${colL(0)}$3:$${lastL}$3`;
   // header
   const H=4; ws.getRow(H).height=30;
@@ -2114,7 +2115,7 @@ $('aExcel').onclick=async()=>{
   }
   const mkWs=(nm)=>wb.addWorksheet(nm,{views:[{state:'frozen',xSplit:4,ySplit:4,showGridLines:false}],pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9}});
   const ws=mkWs(SH1);
-  writeSheet(ws,ROWS,SH1,'일별 인원현황표',t('합계: TB các ngày có dữ liệu (bỏ Thứ 7, CN, lễ, ngày trống) · ② tự động từ sheet 공정별 내부 인원 배치, chỉ TO nhập tay','합계: 데이터 입력일 평균 (토요일·일요일·공휴일·미입력일 제외) · ②는 공정별 내부 인원 배치 시트에서 자동, TO만 수기 입력'));
+  writeSheet(ws,ROWS,SH1,'일별 인원현황표',t('합계: TB các ngày có dữ liệu (bỏ Thứ 7, CN, lễ, ngày trống, ngày đi làm < 150 người) · ② tự động từ sheet 공정별 내부 인원 배치, chỉ TO nhập tay','합계: 데이터 입력일 평균 (토요일·일요일·공휴일·미입력일·출근 150명 미만일 제외) · ②는 공정별 내부 인원 배치 시트에서 자동, TO만 수기 입력'));
   writeSheet(mkWs(SH2),ROWS_B,SH2,'공정별 내부 인원 배치',t('Nhập tay mục ① · TO (kế hoạch) lấy từ kế hoạch sheet 일별 출근 현황 · sheet 일별 인원현황표 tự lấy số từ đây · Nhân lực hiện tại / Nghỉ phép lấy từ sheet 일별 인원현황표','① 수기 입력 · TO(계획)는 일별 출근 현황 계획에서 연결 · 일별 인원현황표 시트는 여기서 자동 연결 · 현재 인원/휴가는 일별 인원현황표 시트에서 연결'));
   // sheet: 일별 출근 현황 — theo mẫu của nhà máy, 실적 link từ sheet 일별 인원현황표
   {
