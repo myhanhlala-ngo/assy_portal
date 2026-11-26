@@ -803,11 +803,13 @@ function kpiAggregate(XLSX, sheets) {
       if (r.indexOf('투입수') >= 0 && r.indexOf('양품수량') >= 0 && r.indexOf('RMA불량') >= 0) { hi = i; h = r; break; }
     }
     if (hi < 0) return;
+    var cCode = h.indexOf('품목');
     var cy = { d: h.indexOf('날짜'), in: h.indexOf('투입수'), g: h.indexOf('양품수량'), rw: h.indexOf('재작업수량'), self: h.indexOf('자공정불량'), post: h.indexOf('후공정불량'), rma: h.indexOf('RMA불량'), fn: h.indexOf('기능불량'), pg: h.indexOf('생산양품량') };
     for (var j = hi + 1; j < rows.length; j++) {
       var r2 = rows[j]; if (!r2) continue; var ym2 = toYM(r2[cy.d]); if (!ym2) continue;
       var dy = toDay(r2[cy.d]); if (dy && (!out.meta.lastDayY || dy > out.meta.lastDayY)) out.meta.lastDayY = dy;
       add(out.months, ym2, 'yIn', n(r2[cy.in])); add(out.months, ym2, 'yGood', n(r2[cy.g])); if (cy.pg >= 0) add(out.months, ym2, 'yProd', n(r2[cy.pg]));
+      if (cCode >= 0) { var cd = String(r2[cCode] == null ? '' : r2[cCode]).trim(); if (cd) { var YC = out.yCodes = out.yCodes || {}; var ym3 = String(ym2); YC[ym3] = YC[ym3] || {}; var a2 = YC[ym3][cd] = YC[ym3][cd] || [0, 0]; a2[0] += n(r2[cy.in]); a2[1] += n(cy.pg >= 0 ? r2[cy.pg] : r2[cy.g]); } }
       if (cy.rw >= 0) add(out.months, ym2, 'yRw', n(r2[cy.rw]));
       add(out.months, ym2, 'ySelf', n(r2[cy.self])); if (cy.post >= 0) add(out.months, ym2, 'yPost', n(r2[cy.post]));
       add(out.months, ym2, 'yRma', n(r2[cy.rma])); if (cy.fn >= 0) add(out.months, ym2, 'yFn', n(r2[cy.fn]));
@@ -815,6 +817,23 @@ function kpiAggregate(XLSX, sheets) {
     }
     out.meta.yFile = s.name;
   });
+  // --- 생산금액현황 (PZ042QA70): 품목 · 양품 · 단가 · 생산금액(VND) — không có cột ngày
+  sheets.forEach(function (s) {
+    var rows = s.rows, hi = -1, h = null;
+    for (var i = 0; i < Math.min(rows.length, 20); i++) {
+      var r = (rows[i] || []).map(function (v) { return String(v == null ? '' : v).replace(/\s+/g, '').trim(); });
+      if (r.indexOf('생산금액(VND)') >= 0 && r.indexOf('단가') >= 0 && r.indexOf('품목') >= 0) { hi = i; h = r; break; }
+    }
+    if (hi < 0) return;
+    var cp = { code: h.indexOf('품목'), q: h.indexOf('양품'), pr: h.indexOf('단가'), v: h.indexOf('생산금액(VND)') }, P = { codes: {}, q: 0, v: 0, file: s.name };
+    for (var j = hi + 1; j < rows.length; j++) {
+      var r2 = rows[j]; if (!r2) continue; var cd = String(r2[cp.code] == null ? '' : r2[cp.code]).trim(); if (!cd) continue;
+      var q = n(r2[cp.q]), v = cp.v >= 0 ? n(r2[cp.v]) : q * n(r2[cp.pr]);
+      var a = P.codes[cd] = P.codes[cd] || [0, 0]; a[0] += q; a[1] += v; P.q += q; P.v += v;
+    }
+    if (P.q) { out.erpNew = out.erpNew || []; out.erpNew.push(P); }
+  });
+  out.meta.hasP = !!(out.erpNew && out.erpNew.length);
   out.meta.hasA = As.length > 0; out.meta.hasB = Bs.length > 0; out.meta.hasF = nF > 0; out.meta.hasY = nY > 0;
   return out;
 }
@@ -969,6 +988,20 @@ var SEC = {}; SECTIONS.forEach(function(s){ SEC[s.id]=s; });
 // returns {rowId: {v:[13], src:[13] ('auto'|'manual'|'calc'|null), cum:number}}
 var C = {};
 function blank(){ return {v:new Array(13).fill(null), src:new Array(13).fill(null), cum:null}; }
+/* 생산금액 theo đơn giá 생산금액현황 (PZ042QA70)
+   - có file đúng tháng: Thực tế = đúng tổng 생산금액(VND) của file đó; Kế hoạch = Σ 투입수 × đơn giá tháng đó
+   - chỉ có file nhiều tháng ('all'): Thực tế = Σ 생산양품량 × đơn giá bình quân; Kế hoạch = Σ 투입수 × đơn giá bình quân
+   - mã hàng chưa có đơn giá: tính theo đơn giá bình quân chung (P.v/P.q) */
+function erpVal(i){
+  var E = S.data.erp||{}, ym = String(COLS[i]), M = E[ym], A = E.all, yc = (S.data.yCodes||{})[ym];
+  if (!M && !A) return null; if (!yc && !M) return null;
+  var avgAll = (M&&M.q?M.v/M.q:0) || (A&&A.q?A.v/A.q:0);
+  function price(c){ var x=(M&&M.codes[c])||(A&&A.codes[c]); return x&&x[0]?x[1]/x[0]:null; }
+  var pl=null, ac=null, un=0;
+  if (yc){ pl=0; ac=0; Object.keys(yc).forEach(function(c){ var p=price(c); if (p==null){ p=avgAll; un+=yc[c][1]; } pl+=yc[c][0]*p; ac+=yc[c][1]*p; }); }
+  if (M) ac = M.v;
+  return { plan:pl, act:ac, unpriced:un };
+}
 function setRow(o, sid, rid, fn){ var r=blank(); for (var i=0;i<13;i++){ var res=fn(i); if (res){ r.v[i]=res[0]; r.src[i]=res[1]; } } o[rid]=r; return r; }
 function hyb(sid, rid, autoVal, i){ if (autoVal!=null) return [autoVal,'auto']; var m=MV(sid+'.'+rid,i); return m!=null?[m,'manual']:[null,'manual']; }
 var DEFAULTS = { 'rty.tgt':99.5, 'fc.tgt':1.5 };
@@ -986,8 +1019,9 @@ function computeAll(){
   q.plan.cum=sumArr(pick(q.plan.v)); q.act.cum=sumArr(pick(q.act.v)); q.rate.cum=div(q.act.cum,q.plan.cum,100);
 
   var v = C.val = {};
-  setRow(v,'val','plan',function(i){ return hyb('val','plan',D(i,'planValue',1e6*S.fx),i); });
-  setRow(v,'val','act', function(i){ return hyb('val','act',D(i,'actValueB',1e6*S.fx),i); });
+  var EV = {}; for (var ii=0; ii<13; ii++) EV[ii] = erpVal(ii);
+  setRow(v,'val','plan',function(i){ var e=EV[i]; return hyb('val','plan',e&&e.plan!=null?e.plan/(1e6*S.fx):D(i,'planValue',1e6*S.fx),i); });
+  setRow(v,'val','act', function(i){ var e=EV[i]; return hyb('val','act',e&&e.act!=null?e.act/(1e6*S.fx):D(i,'actValueB',1e6*S.fx),i); });
   setRow(v,'val','rate',function(i){ return cmp(div(v.act.v[i],v.plan.v[i],100)); });
   v.plan.cum=sumArr(pick(v.plan.v)); v.act.cum=sumArr(pick(v.act.v)); v.rate.cum=div(v.act.cum,v.plan.cum,100);
 
@@ -1857,7 +1891,7 @@ document.getElementById('fXls').onchange = function(e){
   .then(function(lists){
     var sheets = [].concat.apply([], lists);
     var agg = kpiAggregate(XLSX, sheets);
-    if (!agg.meta.hasA && !agg.meta.hasB && !agg.meta.hasF && !agg.meta.hasY){ toast(L('Không nhận ra file. Cần file 생산일보 재료비 (PZ034QA31), 생산계획 (P4810QA40) Chi phí thiệt hại (실패비용) hoặc 수율상세현황 (PZ403QA30).','파일을 인식하지 못했습니다.')); return; }
+    if (!agg.meta.hasA && !agg.meta.hasB && !agg.meta.hasF && !agg.meta.hasY && !agg.meta.hasP){ toast(L('Không nhận ra file. Cần file 생산일보 재료비 (PZ034QA31), 생산계획 (P4810QA40) Chi phí thiệt hại (실패비용) hoặc 수율상세현황 (PZ403QA30).','파일을 인식하지 못했습니다.')); return; }
     var old = S.data.months||{}, om = S.data.meta||{};
     var GROUPS = { A:['aProdQty','aGoodQty','aValue','aMat'], B:['planQty','actQty','defQty','planValue','actValueB','defCost'], F:['fcBase','fcTotal','fcSelf','fcPost','fcUser','fcDis','fcRework','fcEtc','fcFx','fcProc','fcSales'], Y:['yIn','yProd','yGood','yRw','ySelf','yPost','yRma','yFn'] };
     if (!agg.meta.hasA && agg.meta.hasB){ toast(L('Lưu ý: giá trị SX cần cả file đơn giá (PZ034QA31) — hãy nạp cùng lúc.','생산금액 산출에는 단가 파일(PZ034QA31)이 함께 필요합니다.')); }
@@ -1881,6 +1915,17 @@ document.getElementById('fXls').onchange = function(e){
       if (g==='F'){ agg.fcModels=S.data.fcModels; agg.fcDaily=S.data.fcDaily; agg.meta.fcFile=om.fcFile; agg.meta.fcLastMonth=om.fcLastMonth; }
       if (g==='Y'){ agg.meta.lastDayY=om.lastDayY; agg.meta.yFile=om.yFile; }
     });
+    // số theo mã hàng của file hiệu suất: tháng có trong file mới thay thế, tháng khác giữ nguyên
+    var yc = Object.assign({}, S.data.yCodes||{}); Object.keys(agg.yCodes||{}).forEach(function(k){ yc[k]=agg.yCodes[k]; }); agg.yCodes = yc;
+    // đơn giá 생산금액현황 (PZ042QA70): hỏi file thuộc tháng nào (file không có cột ngày)
+    var erp = Object.assign({}, S.data.erp||{});
+    (agg.erpNew||[]).forEach(function(P){
+      var ans = window.prompt(L('File 생산금액현황 (PZ042QA70) "'+P.file+'"\nTổng 생산금액 '+Math.round(P.v).toLocaleString('en-US')+' VND · 양품 '+P.q.toLocaleString('en-US')+'\n\nFile này là của THÁNG nào? Nhập dạng 2026-01.\nĐể trống nếu file gồm nhiều tháng → chỉ dùng làm bảng đơn giá chung.',
+        '생산금액현황 (PZ042QA70) "'+P.file+'"\n생산금액 '+Math.round(P.v).toLocaleString('en-US')+' VND\n\n몇 월 파일입니까? 예: 2026-01\n여러 달이면 비워 두세요 → 공통 단가표로 사용'), '');
+      if (ans===null) return;
+      var m = String(ans).trim().match(/^(\d{4})\D?(\d{1,2})$/), key = m ? m[1]+('0'+m[2]).slice(-2) : 'all';
+      erp[key] = P; });
+    agg.erp = erp; delete agg.erpNew;
     S.data = agg; S.dataSrc = files.map(function(f){ return f.name; }).join(' + '); S.cutoff = lastDataMonth();
     persist(); renderAll();
     toast(S.lang==='vi' ? 'Đã cập nhật từ '+files.length+' file · dữ liệu đến T'+S.cutoff : '갱신 완료: 파일 '+files.length+'개 · ~'+S.cutoff+'월'+(S.lang==='both'?' · Đã cập nhật':''));
